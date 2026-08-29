@@ -333,6 +333,24 @@ Check your Browserslist config to be sure that your targets are set up correctly
   </div>
 
   <script>
+    // roundRect is only in Chrome 99+, Safari 15.4+ and Firefox 112+, and it is the
+    // one modern canvas call this page makes -- without it IN and OUT pins throw
+    // instead of drawing. arcTo has been everywhere for years and matches the spec
+    // closely enough for a rectangle with equal corners.
+    if (typeof CanvasRenderingContext2D !== 'undefined'
+        && !CanvasRenderingContext2D.prototype.roundRect) {
+      CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, radii) {
+        const raw = Array.isArray(radii) ? radii[0] : radii;
+        const r = Math.min(Math.abs(Number(raw) || 0), Math.abs(w) / 2, Math.abs(h) / 2);
+        this.moveTo(x + r, y);
+        this.arcTo(x + w, y,     x + w, y + h, r);
+        this.arcTo(x + w, y + h, x,     y + h, r);
+        this.arcTo(x,     y + h, x,     y,     r);
+        this.arcTo(x,     y,     x + w, y,     r);
+        this.closePath();
+      };
+    }
+
     const canvas = document.getElementById('sandbox');
     const ctx = canvas.getContext('2d');
     
@@ -552,6 +570,11 @@ Check your Browserslist config to be sure that your targets are set up correctly
     const AUTOSAVE_KEY = 'lgs-board';
     const CODE_PREFIX = 'LGS1';
 
+    // Auto-assigned names are A..ZZZ; the presets add pins like S, R, Q, Q', EN,
+    // Ci, Sel. Nothing legitimate falls outside this, so anything that does is a
+    // crafted payload rather than a board, and the whole code is refused.
+    const NAME_OK = /^[A-Za-z0-9_'+-]{1,12}$/;
+
     function heightFor(type) {
       return ['AND', 'OR', 'XOR', 'NAND', 'NOR', 'XNOR'].includes(type) ? 44 : 36;
     }
@@ -580,6 +603,7 @@ Check your Browserslist config to be sure that your targets are set up correctly
         const [id, type, x, y, val, name] = t;
         if (typeof id !== 'number' || !KNOWN_TYPES.includes(type)) return false;
         if (seen.has(id)) return false;
+        if (name && !NAME_OK.test(String(name))) return false;
         seen.add(id);
         built.push({
           id, type, name: name || '', fixed: !!name,
@@ -760,6 +784,7 @@ Check your Browserslist config to be sure that your targets are set up correctly
         if (idx < 0 || len < 0 || idx >= count) return null;
         const name = nameStr.slice(i + 3, i + 3 + len);
         if (name.length !== len) return null;
+        if (!NAME_OK.test(name)) return null;
         n[idx][5] = name;
         i += 3 + len;
       }
@@ -1495,6 +1520,23 @@ Check your Browserslist config to be sure that your targets are set up correctly
         }
       }
 
+      // Input ports: drag backwards from a pin to whichever output should feed it.
+      for (let n of nodes) {
+        const ports = getPorts(n);
+        for (let idx = 0; idx < ports.inputs.length; idx++) {
+          const port = ports.inputs[idx];
+          const dx = pos.x - port.x;
+          const dy = pos.y - port.y;
+          if (dx * dx + dy * dy < 80) {
+            connectionWire = {
+              backwards: true, to: n.id, toInput: idx,
+              startX: port.x, startY: port.y, curX: pos.x, curY: pos.y
+            };
+            return;
+          }
+        }
+      }
+
       // Node selection/dragging
       for (let i = nodes.length - 1; i >= 0; i--) {
         const n = nodes[i];
@@ -1564,7 +1606,31 @@ Check your Browserslist config to be sure that your targets are set up correctly
         return;   // a pan is not a click: nothing to select, nothing to wire
       }
 
-      if (connectionWire) {
+      if (connectionWire && connectionWire.backwards) {
+        const pos = { x: connectionWire.curX, y: connectionWire.curY };
+        const beforeWire = snapshot();
+        let wired = false;
+        for (let n of nodes) {
+          if (n.id === connectionWire.to) continue;   // a gate cannot feed its own pin
+          const out = getPorts(n).output;
+          if (!out) continue;
+          const dx = pos.x - out.x;
+          const dy = pos.y - out.y;
+          if (dx * dx + dy * dy < 80) {
+            // One wire per pin, same rule as the forward direction.
+            connections = connections.filter(c =>
+              !(c.to === connectionWire.to && c.toInput === connectionWire.toInput));
+            connections.push({ from: n.id, to: connectionWire.to, toInput: connectionWire.toInput });
+            wired = true;
+            break;
+          }
+        }
+        connectionWire = null;
+        if (wired) { pushHistory(beforeWire); scheduleAutosave(); }
+        evaluate();
+        draw();
+      }
+      else if (connectionWire) {
         const pos = { x: connectionWire.curX, y: connectionWire.curY };
         const beforeWire = snapshot();
         let wired = false;
@@ -1666,13 +1732,30 @@ Check your Browserslist config to be sure that your targets are set up correctly
         }
         ctx.stroke();
         ctx.shadowBlur = 0;
+
+        // Arrowhead at the input end, so a wire reads as source -> sink at a
+        // glance. The curve's last control point shares the endpoint's y, so it
+        // always arrives horizontally and the head never needs rotating.
+        ctx.beginPath();
+        ctx.moveTo(end.x, end.y);
+        ctx.lineTo(end.x - 8, end.y - 4);
+        ctx.lineTo(end.x - 8, end.y + 4);
+        ctx.closePath();
+        ctx.fillStyle = ctx.strokeStyle;
+        ctx.fill();
       });
 
       // Connecting Draft Wire (Curved)
       if (connectionWire) {
+        const a = connectionWire.backwards
+          ? { x: connectionWire.curX, y: connectionWire.curY }
+          : { x: connectionWire.startX, y: connectionWire.startY };
+        const b = connectionWire.backwards
+          ? { x: connectionWire.startX, y: connectionWire.startY }
+          : { x: connectionWire.curX, y: connectionWire.curY };
         ctx.beginPath();
-        ctx.moveTo(connectionWire.startX, connectionWire.startY);
-        ctx.bezierCurveTo(connectionWire.startX + 40, connectionWire.startY, connectionWire.curX - 40, connectionWire.curY, connectionWire.curX, connectionWire.curY);
+        ctx.moveTo(a.x, a.y);
+        ctx.bezierCurveTo(a.x + 40, a.y, b.x - 40, b.y, b.x, b.y);
         ctx.strokeStyle = activeCol;
         ctx.lineWidth = 2;
         ctx.setLineDash([4, 4]);
@@ -1718,7 +1801,13 @@ Check your Browserslist config to be sure that your targets are set up correctly
         ctx.font = 'bold 13px ui-monospace, SFMono-Regular, Menlo, monospace';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(n.name, n.x + n.w / 2, n.y + n.h / 2);
+        // NOT and BUF are triangles: nearly all of the room is at the base, so
+        // centring on the bounding box drives the letter into the tip where the
+        // shape has pinched shut. A triangle's centroid is a third of the way
+        // from its base, and that is where the label actually looks centred.
+        const tri = n.type === 'NOT' || n.type === 'BUF';
+        const tipX = n.type === 'BUF' ? n.w : n.w - 10;
+        ctx.fillText(n.name, n.x + (tri ? tipX / 3 : n.w / 2), n.y + n.h / 2);
 
         const ports = getPorts(n);
         ctx.fillStyle = borderCol;
@@ -1744,13 +1833,19 @@ Check your Browserslist config to be sure that your targets are set up correctly
     let tableCircuits = [];
     const TABLE_WORK_BUDGET = 250000;
 
+    // Node names end up inside an innerHTML string, and a name can come from a
+    // share link, a pasted code or a restored autosave -- none of which this page
+    // gets to trust. Escape at the sink, so no future caller can forget to.
+    const HTML_ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+    const esc = str => String(str == null ? '' : str).replace(/[&<>"']/g, ch => HTML_ESCAPES[ch]);
+
     function bitCell(on, extra) {
       const tone = on ? 'text-[var(--primary)] font-bold' : 'text-[var(--muted-foreground)]';
       return `<td class="${CELL} ${extra || ''} ${tone}">${on ? '1' : '0'}</td>`;
     }
 
     function headCell(label, tone, extra) {
-      return `<th class="${CELL} ${extra || ''} ${tone}">${label}</th>`;
+      return `<th class="${CELL} ${extra || ''} ${tone}">${esc(label)}</th>`;
     }
 
     // Connected components of the wire graph, wires treated as undirected. Two
@@ -1803,17 +1898,32 @@ Check your Browserslist config to be sure that your targets are set up correctly
       const sBits = stateNodes.length;
       const bits = inputs.length + sBits;
       const rowCount = Math.pow(2, bits);
-      const signature = `${inputs.map(n => n.name).join(', ')} \u2192 ${outputs.map(n => n.name).join(', ')}`;
+      const signature = `${inputs.map(n => esc(n.name)).join(', ')} \u2192 ${outputs.map(n => esc(n.name)).join(', ')}`;
 
       const shell = inner => `<div class="border border-[var(--border)] rounded bg-[var(--background)] overflow-hidden shrink-0">`
         + `<div class="px-2 py-1 text-[10px] font-mono text-[var(--muted-foreground)] bg-[var(--card)] border-b border-[var(--border)]">${signature}</div>`
         + inner + `</div>`;
 
-      if (rowCount > MAX_TABLE_ROWS || rowCount * members.length > TABLE_WORK_BUDGET) {
+      const work = rowCount * members.length;
+      if (rowCount > MAX_TABLE_ROWS || work > TABLE_WORK_BUDGET) {
+        // Say which ceiling was hit and by how much: "too big" on its own leaves
+        // you guessing whether to drop one input or five.
+        const tooTall = rowCount > MAX_TABLE_ROWS;
+        const over = tooTall
+          ? `<b>${rowCount.toLocaleString()} rows</b>, over the ${MAX_TABLE_ROWS.toLocaleString()}-row limit`
+          : `<b>${rowCount.toLocaleString()} rows</b> &times; ${members.length} gates `
+            + `= ${work.toLocaleString()} steps, over the ${TABLE_WORK_BUDGET.toLocaleString()} budget`;
+
+        // Every input doubles the row count, so the fix is measured in halvings.
+        const ratio = tooTall ? rowCount / MAX_TABLE_ROWS : work / TABLE_WORK_BUDGET;
+        const drop = Math.max(1, Math.ceil(Math.log(ratio) / Math.LN2));
+        const byState = sBits
+          ? ` Unticking &ldquo;Show (t)&rdquo; removes ${sBits} of them at once.` : '';
+
         return shell(`<div class="px-3 py-4 text-[10px] leading-relaxed text-[var(--muted-foreground)] text-center">`
-          + `${inputs.length} input${inputs.length === 1 ? '' : 's'}${sBits ? ` and ${sBits} state bit${sBits === 1 ? '' : 's'}` : ''}`
-          + ` means <b>${rowCount.toLocaleString()} rows</b> across ${members.length} nodes &mdash; too slow to redo on every toggle.<br>`
-          + `${sBits ? 'Untick &ldquo;Show (t)&rdquo;, or remove' : 'Remove'} an input.</div>`);
+          + `${inputs.length} input${inputs.length === 1 ? '' : 's'}`
+          + `${sBits ? ` and ${sBits} state bit${sBits === 1 ? '' : 's'}` : ''} means ${over}.<br>`
+          + `Each one doubles the table, so removing <b>${drop}</b> would bring it back.${byState}</div>`);
       }
 
       let headHtml = '';
