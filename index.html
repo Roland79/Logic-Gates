@@ -293,7 +293,7 @@ Check your Browserslist config to be sure that your targets are set up correctly
           <span>Workspace Canvas</span>
           <span class="flex items-center gap-3">
             <span id="clip-indicator" class="text-[var(--muted-foreground)] hidden font-mono">0 on clipboard</span>
-            <span id="stability-indicator" class="text-[#f59e0b] hidden font-mono font-bold">Not settling &mdash; oscillating. Please Show (t) for full logic.</span>
+            <span id="stability-indicator" class="text-[#f59e0b] hidden font-mono font-bold">Oscillating &mdash; <b>&sim;</b> marks rows that never settle. Tick &ldquo;Show (t)&rdquo; to read them.</span>
             <span id="placement-indicator" class="text-[var(--primary)] hidden font-mono font-bold">Click canvas to place gate &middot; hold Shift for several</span>
             <span class="flex items-center gap-1 font-mono font-normal">
               <button onclick="zoomBy(1/1.25)" title="Zoom out (−)" class="px-1.5 leading-none py-0.5 border border-[var(--border)] rounded hover:bg-[var(--card)]">&minus;</button>
@@ -501,11 +501,11 @@ Check your Browserslist config to be sure that your targets are set up correctly
         // Step to walk it one propagation pass at a time.
         build: () => ({
           nodes: [
-            nd(1, 'INPUT',   50, 182, 'EN'),
-            nd(2, 'NAND',   200, 178),
-            nd(3, 'NOT',    350, 182),
-            nd(4, 'NOT',    490, 182),
-            nd(5, 'OUTPUT', 630, 182, 'Q')
+            nd(1, 'INPUT',   60, 120, 'EN'),
+            nd(2, 'NAND',   220, 116),
+            nd(3, 'NOT',    300, 250),
+            nd(4, 'NOT',    450, 250),
+            nd(5, 'OUTPUT', 560, 120, 'Q')
           ],
           connections: [w(1,2,0), w(4,2,1), w(2,3,0), w(3,4,0), w(2,5)]
         })
@@ -1830,6 +1830,11 @@ Check your Browserslist config to be sure that your targets are set up correctly
     // Measured on this machine: a sweep costs about 1us per (row x node), and the
     // whole thing reruns on every input toggle, so cap the work near 250ms.
     const MAX_TABLE_ROWS = 8192;
+    // Set while building the tables if any ROW failed to settle. Distinct from
+    // `unstable`, which is about the board's current state: a board resting at
+    // EN=0 is perfectly stable while the EN=1 row still oscillates, and that row
+    // is the one wearing tildes that need explaining.
+    let tableUnsettled = false;
     let tableCircuits = [];
     const TABLE_WORK_BUDGET = 250000;
 
@@ -1842,6 +1847,14 @@ Check your Browserslist config to be sure that your targets are set up correctly
     function bitCell(on, extra) {
       const tone = on ? 'text-[var(--primary)] font-bold' : 'text-[var(--muted-foreground)]';
       return `<td class="${CELL} ${extra || ''} ${tone}">${on ? '1' : '0'}</td>`;
+    }
+
+    // A cell for a row that never settles. There is no bit to show -- whatever
+    // the relaxation was holding when it gave up is an artefact of where it
+    // started, not an answer, and printing it makes the table flicker.
+    function unsettledCell(extra) {
+      return `<td class="${CELL} ${extra || ''} text-[#f59e0b] font-bold" `
+        + `title="This input combination never settles">&sim;</td>`;
     }
 
     function headCell(label, tone, extra) {
@@ -1964,7 +1977,8 @@ Check your Browserslist config to be sure that your targets are set up correctly
         inputs.forEach((n, i) => { n.val = !!((r >> (sBits + inputs.length - 1 - i)) & 1); });
         stateNodes.forEach((n, i) => { n.val = !!((r >> (sBits - 1 - i)) & 1); });
 
-        settle(frozen, scope);
+        const settled = settle(frozen, scope);
+        if (!settled) tableUnsettled = true;
         const next = stateNodes.map(n => gateValue(n));
 
         const here = r === liveRow;
@@ -1973,16 +1987,24 @@ Check your Browserslist config to be sure that your targets are set up correctly
           + ` class="border-b border-[var(--border)] cursor-pointer ${here
           ? 'bg-[var(--row-live)] shadow-[inset_3px_0_0_0_var(--row-live-edge)]'
           : 'hover:bg-[var(--card)]'}">`;
+        // Inputs and pinned state are given, so they are real either way. Everything
+        // derived from them is only meaningful if the circuit came to rest.
         inputs.forEach(i => row += bitCell(i.val));
         stateNodes.forEach(n => row += bitCell(n.val));
-        gates.forEach(g => row += bitCell(g.val));
-        outputs.forEach(o => row += bitCell(o.val));
-        next.forEach((v, idx) => row += bitCell(v, idx === 0 ? 'border-l border-[var(--border)]' : ''));
+        gates.forEach(g => row += settled ? bitCell(g.val) : unsettledCell());
+        outputs.forEach(o => row += settled ? bitCell(o.val) : unsettledCell());
+        next.forEach((v, idx) => {
+          const edge = idx === 0 ? 'border-l border-[var(--border)]' : '';
+          row += settled ? bitCell(v, edge) : unsettledCell(edge);
+        });
         bodyHtml += row + '</tr>';
       }
 
       nodes.forEach((n, i) => { n.val = snapshot[i]; });
 
+      // No footnote here: the canvas header already carries the oscillation warning,
+      // which is where it lived before and where it belongs. The tilde cells are
+      // the in-table half of the same message.
       return shell(`<div class="overflow-auto max-h-[55vh]">`
         + `<table class="min-w-full text-center text-xs font-mono">`
         + `<thead class="bg-[var(--card)] border-b border-[var(--border)] sticky top-0"><tr>${headHtml}</tr></thead>`
@@ -2070,6 +2092,7 @@ Check your Browserslist config to be sure that your targets are set up correctly
       const container = document.getElementById('tables');
       if (!container) return;
       tableCircuits = [];
+      tableUnsettled = false;
 
       const showGates = document.getElementById('toggle-gates').checked;
       const showState = document.getElementById('toggle-state').checked;
@@ -2088,6 +2111,11 @@ Check your Browserslist config to be sure that your targets are set up correctly
         const hasOut = members.some(n => n.type === 'OUTPUT');
         if (hasIn !== hasOut) halfBuilt++;
       });
+
+      // The warning lives in the canvas header, next to the board it describes --
+      // raised either by the live board oscillating or by any row that cannot rest.
+      const warn = document.getElementById('stability-indicator');
+      if (warn) warn.classList.toggle('hidden', !(unstable || tableUnsettled));
 
       if (!blocks.length) {
         container.innerHTML = `<div class="px-2 py-8 text-[var(--muted-foreground)] text-center text-xs">Place inputs and outputs to evaluate logic.</div>`;
