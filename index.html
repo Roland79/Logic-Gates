@@ -92,72 +92,214 @@ Check your Browserslist config to be sure that your targets are set up correctly
 /*! https://mths.be/cssesc v3.0.0 by @mathias */
   </script>
   <style>
-    /* Design tokens: the markup references these everywhere but nothing defined
-       them, so standalone the page rendered as invisible-on-white. */
+    /* ====================================================================
+       Logic Sandbox Design System -- warm paper with aero-era controls.
+       Tokens are lifted verbatim from the system's tokens/*.css; the app's
+       original variable names (--background, --card, --border, --primary...)
+       are kept as aliases on top, so every Tailwind utility in the markup and
+       the canvas palette reader keep working without being touched.
+
+       IBM Plex is the system's stated substitution for the fonts this app
+       never shipped. It is the one network request on the page and it is
+       optional: every stack below falls back to what was here before, so
+       offline the app looks like it always did, just in the system font.
+       ==================================================================== */
+    @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&display=swap");
+
     :root {
-      --background: #ffffff;
-      --foreground: #0b0f19;
-      --card: #f6f7f9;
-      --border: #d8dce3;
-      --primary: #10b981;
-      --primary-foreground: #04170f;
-      --muted-foreground: #6b7280;
-      /* Canvas-only. --border is deliberately faint for UI chrome, which made the
-         schematic wash out; gates and wires get their own stronger ink. */
-      --wire: #4d5771;
-      --gate-fill: #eaeef5;
-      --gate-ink: #1b2233;
-      /* Energised gates/wires. On white a brighter stroke LOSES contrast, so the
+      --font-sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+      --font-serif: "IBM Plex Serif", Georgia, "Times New Roman", serif;
+
+      /* accent -- signal green. Means one thing: this carries a 1. */
+      --green-400: #34d399; --green-500: #10b981; --green-600: #059669;
+      --green-050: #c7f2df; --green-900: #04372a; --green-950: #04170f;
+
+      /* ink -- schematic greys */
+      --ink-900: #0b0f19; --ink-800: #151b28; --ink-700: #1b2233; --ink-600: #2b3444;
+      --ink-500: #4d5771; --ink-400: #6b7280; --ink-300: #8b94a5;
+      --ink-200: #d8dce3; --ink-100: #eaeef5; --ink-050: #f6f7f9;
+      --ink-fg:  #e7eaf0;
+
+      /* paper -- the warm substrate the system adds. Never pure white. */
+      --paper-100: #faf7ef; --paper-200: #f1ece0; --paper-300: #e6e0d1;
+      --paper-400: #ddd6c4; --paper-500: #c6bda6;
+
+      /* signals */
+      --amber-500: #f59e0b; --red-500: #ef4444; --red-600: #dc2626;
+      --blue-050: #e4ebfb; --blue-600: #3b5bdb; --blue-300: #7f9cff;
+
+      --surface-page:   var(--paper-200);
+      --surface-card:   var(--paper-100);
+      --surface-sunken: var(--paper-300);
+      --surface-canvas: var(--paper-100);
+      --surface-chip:   var(--paper-200);
+
+      --text-body: var(--ink-900); --text-strong: var(--ink-900);
+      --text-muted: var(--ink-400); --text-accent: var(--green-600);
+      --text-inverse: var(--paper-100);
+
+      --border-rule: var(--paper-400);   /* paper rules: chrome, panels, tables */
+      --border-hard: var(--ink-200);     /* cool hairline, data density */
+      --border-accent: var(--green-600);
+
+      --accent: var(--green-500); --accent-strong: var(--green-600); --accent-ink: var(--green-950);
+
+      /* Canvas-only. --border-rule is deliberately faint for UI chrome, which
+         would wash the schematic out; gates and wires get their own ink. */
+      --wire: var(--ink-500);
+      --gate-fill: var(--ink-100);
+      --gate-ink: var(--ink-700);
+      /* Energised gates/wires. On paper a brighter stroke LOSES contrast, so the
          outline alone can't carry the signal -- the lit body tint and the glow do. */
-      --live: #059669;
-      --live-fill: #c7f2df;
-      --live-ink: #04372a;
-      --row-live: #e4ebfb;
-      --row-live-edge: #3b5bdb;
+      --live: var(--green-600);
+      --live-fill: var(--green-050);
+      --live-ink: var(--green-900);
+      /* The row the board is sitting on. Deliberately blue, not green, so
+         "where you are" can never be read as "this is high". */
+      --row-live: var(--blue-050);
+      --row-live-edge: var(--blue-600);
+      --warn: var(--amber-500);
+      --danger: var(--red-600);
+      --select: var(--red-500);
+
+      /* --- aliases the existing markup and canvas code already reference --- */
+      --background: var(--surface-page);
+      --foreground: var(--text-body);
+      --card: var(--surface-card);
+      --border: var(--border-rule);
+      --primary: var(--accent);
+      --primary-foreground: var(--accent-ink);
+      --muted-foreground: var(--text-muted);
+
+      /* type roles */
+      --size-micro: 10px; --size-xs: 12px; --size-gate: 13px;
+      --size-sm: 14px; --size-md: 16px; --size-lg: 18px;
+      --weight-regular: 400; --weight-medium: 500; --weight-semibold: 600; --weight-bold: 700;
+      --leading-tight: 1.15; --leading-snug: 1.35; --leading-relaxed: 1.6;
+      --text-ui:      var(--weight-medium) var(--size-xs)/var(--leading-snug) var(--font-sans);
+      --text-data:    var(--weight-medium) var(--size-xs)/var(--leading-snug) var(--font-mono);
+      --text-label:   var(--weight-medium) var(--size-micro)/var(--leading-snug) var(--font-mono);
+      --text-heading: var(--weight-semibold) var(--size-sm)/var(--leading-snug) var(--font-sans);
+      --text-title:   var(--weight-bold) var(--size-lg)/var(--leading-tight) var(--font-sans);
+
+      /* spacing -- the source's own Tailwind steps, odd ones included */
+      --space-1: 2px; --space-2: 4px; --space-3: 6px; --space-4: 8px;
+      --space-5: 10px; --space-6: 12px; --space-7: 16px; --space-8: 20px;
+      --pad-button: 6px 12px; --pad-tool: 4px 10px; --pad-cell: 6px 8px;
+      --gap-toolbar: 6px;
+      --hairline: 1px;
+      /* Squared off: the system defines no rounded corners anywhere in chrome.
+         The gate bodies drawn on canvas keep their 6px radius -- that is
+         schematic, not chrome. */
+      --radius-sm: 0; --radius-md: 0; --radius-lg: 0; --radius-pill: 0;
+
+      /* elevation -- aero depth. Paper never floats far: no blur above 8px
+         except drop-down menus. */
+      --gloss: linear-gradient(180deg, rgba(255,255,255,.95) 0%, rgba(255,255,255,.62) 47%, rgba(255,255,255,.14) 51%, rgba(255,255,255,.42) 100%);
+      --gloss-accent: linear-gradient(180deg, rgba(255,255,255,.42) 0%, rgba(255,255,255,.14) 47%, rgba(255,255,255,0) 51%, rgba(255,255,255,.16) 100%);
+      --highlight-top: inset 0 1px 0 rgba(255,255,255,.9);
+      --highlight-edge: inset 0 0 0 1px rgba(255,255,255,.5);
+      --shadow-flat: 0 1px 0 rgba(11,15,25,.05);
+      --shadow-raised: 0 1px 1px rgba(11,15,25,.07), 0 2px 4px rgba(11,15,25,.06);
+      --shadow-panel: 0 1px 2px rgba(11,15,25,.06), 0 4px 8px rgba(11,15,25,.05);
+      --shadow-pressed: inset 0 2px 3px rgba(11,15,25,.16);
+      --shadow-well: inset 0 1px 3px rgba(11,15,25,.12);
+      --shadow-focus: 0 0 0 3px color-mix(in oklab, var(--accent) 30%, transparent);
+      /* Nothing floats far -- no blur above 8px except drop-down menus, which are
+         the one thing in the product that is genuinely above the page. */
+      --shadow-menu: 0 2px 4px rgba(11,15,25,.10), 0 8px 20px rgba(11,15,25,.16);
+      --glass: color-mix(in oklab, var(--surface-card) 76%, transparent);
+      --glass-blur: blur(10px) saturate(1.15);
+
+      /* surfaces -- cheap, tile-free paper fibre and the board's grid */
+      --texture-paper:
+        radial-gradient(120% 90% at 12% 0%, rgba(255,255,255,.75), transparent 60%),
+        radial-gradient(100% 80% at 100% 100%, rgba(198,189,166,.35), transparent 55%),
+        repeating-linear-gradient(0deg, rgba(11,15,25,.018) 0 1px, transparent 1px 3px),
+        repeating-linear-gradient(90deg, rgba(11,15,25,.014) 0 1px, transparent 1px 4px);
+      --texture-grid:
+        linear-gradient(rgba(77,87,113,.10) 1px, transparent 1px) 0 0/24px 24px,
+        linear-gradient(90deg, rgba(77,87,113,.10) 1px, transparent 1px) 0 0/24px 24px;
+      /* Card-scale paper. The shell's grain is pitched for a whole window and is
+         too coarse to sit under a truth table, so the big pale surfaces -- the
+         board and the panels -- get their own: a soft lift under the top-left
+         light, a settle in the far corner, and a fine warm fibre so no region
+         is ever a flat sheet of white. Warm ink, not the shell's cool ink:
+         grain the colour of the paper reads as fibre, grain the colour of the
+         schematic reads as dirt. Light only -- graphite does not glare. */
+      --texture-fibre:
+        radial-gradient(130% 100% at 18% 0%, rgba(255,255,255,.66), transparent 58%),
+        radial-gradient(110% 90% at 100% 100%, rgba(198,189,166,.26), transparent 62%),
+        repeating-linear-gradient(0deg,  rgba(92,74,45,.022) 0 1px, transparent 1px 3px),
+        repeating-linear-gradient(90deg, rgba(92,74,45,.018) 0 1px, transparent 1px 4px);
+
+      /* motion -- fast and mechanical. No bounce, no spring, no entrances. */
+      --dur-fast: 120ms; --dur-base: 150ms;
+      --ease-aero: cubic-bezier(.2,.7,.2,1);
+      --ease-menu: cubic-bezier(.16,1,.3,1);
+      --transition-control: background var(--dur-base) var(--ease-aero),
+                            border-color var(--dur-base) var(--ease-aero),
+                            box-shadow var(--dur-base) var(--ease-aero),
+                            color var(--dur-base) var(--ease-aero);
       color-scheme: light;
     }
 
-    /* Three theme states. No data-theme = follow the OS; data-theme pins it. The
-       media query is guarded so an explicit "light" still wins on a dark OS. */
+    /* Drafting-table dark: paper becomes graphite and the greens step brighter
+       to hold contrast. Three theme states -- no data-theme follows the OS, and
+       the media query is guarded so an explicit "light" still wins on a dark OS. */
     @media (prefers-color-scheme: dark) {
       :root:not([data-theme="light"]) {
-      --background: #0b0f19;
-      --foreground: #e7eaf0;
-      --card: #151b28;
-      --border: #2b3444;
-      --primary: #34d399;
-      --primary-foreground: #04170f;
-      --muted-foreground: #8b94a5;
-      --wire: #97a6bd;
-      --gate-fill: #1e2739;
-      --gate-ink: #f2f5fa;
-      --live: #4ade80;
-      --live-fill: #10402c;
-      --live-ink: #dcfce7;
-      --row-live: #1b2542;
-      --row-live-edge: #7f9cff;
-      color-scheme: dark;
+        --surface-page: var(--ink-900); --surface-card: var(--ink-800);
+        --surface-sunken: #10161f; --surface-canvas: var(--ink-900);
+        --surface-chip: var(--ink-800);
+        --text-body: var(--ink-fg); --text-strong: #f2f5fa;
+        --text-muted: var(--ink-300); --text-accent: var(--green-400);
+        --text-inverse: var(--ink-900);
+        --border-rule: var(--ink-600); --border-hard: var(--ink-600);
+        --accent: var(--green-400); --accent-strong: var(--green-400);
+        --wire: #97a6bd; --gate-fill: #1e2739; --gate-ink: #f2f5fa;
+        --live: #4ade80; --live-fill: #10402c; --live-ink: #dcfce7;
+        --row-live: #1b2542; --row-live-edge: var(--blue-300);
+        --gloss: linear-gradient(180deg, rgba(255,255,255,.10) 0%, rgba(255,255,255,.05) 47%, rgba(255,255,255,0) 51%, rgba(255,255,255,.03) 100%);
+        --highlight-top: inset 0 1px 0 rgba(255,255,255,.10);
+        --highlight-edge: inset 0 0 0 1px rgba(255,255,255,.05);
+        --texture-paper:
+          radial-gradient(120% 90% at 12% 0%, rgba(255,255,255,.05), transparent 60%),
+          radial-gradient(100% 80% at 100% 100%, rgba(0,0,0,.35), transparent 55%);
+        --texture-grid:
+          linear-gradient(rgba(151,166,189,.09) 1px, transparent 1px) 0 0/24px 24px,
+          linear-gradient(90deg, rgba(151,166,189,.09) 1px, transparent 1px) 0 0/24px 24px;
+        --texture-fibre: none;
+        color-scheme: dark;
       }
     }
 
     :root[data-theme="dark"] {
-      --background: #0b0f19;
-      --foreground: #e7eaf0;
-      --card: #151b28;
-      --border: #2b3444;
-      --primary: #34d399;
-      --primary-foreground: #04170f;
-      --muted-foreground: #8b94a5;
-      --wire: #97a6bd;
-      --gate-fill: #1e2739;
-      --gate-ink: #f2f5fa;
-      --live: #4ade80;
-      --live-fill: #10402c;
-      --live-ink: #dcfce7;
-      --row-live: #1b2542;
-      --row-live-edge: #7f9cff;
+      --surface-page: var(--ink-900); --surface-card: var(--ink-800);
+      --surface-sunken: #10161f; --surface-canvas: var(--ink-900);
+      --surface-chip: var(--ink-800);
+      --text-body: var(--ink-fg); --text-strong: #f2f5fa;
+      --text-muted: var(--ink-300); --text-accent: var(--green-400);
+      --text-inverse: var(--ink-900);
+      --border-rule: var(--ink-600); --border-hard: var(--ink-600);
+      --accent: var(--green-400); --accent-strong: var(--green-400);
+      --wire: #97a6bd; --gate-fill: #1e2739; --gate-ink: #f2f5fa;
+      --live: #4ade80; --live-fill: #10402c; --live-ink: #dcfce7;
+      --row-live: #1b2542; --row-live-edge: var(--blue-300);
+      --gloss: linear-gradient(180deg, rgba(255,255,255,.10) 0%, rgba(255,255,255,.05) 47%, rgba(255,255,255,0) 51%, rgba(255,255,255,.03) 100%);
+      --highlight-top: inset 0 1px 0 rgba(255,255,255,.10);
+      --highlight-edge: inset 0 0 0 1px rgba(255,255,255,.05);
+      --texture-paper:
+        radial-gradient(120% 90% at 12% 0%, rgba(255,255,255,.05), transparent 60%),
+        radial-gradient(100% 80% at 100% 100%, rgba(0,0,0,.35), transparent 55%);
+      --texture-grid:
+        linear-gradient(rgba(151,166,189,.09) 1px, transparent 1px) 0 0/24px 24px,
+        linear-gradient(90deg, rgba(151,166,189,.09) 1px, transparent 1px) 0 0/24px 24px;
+      --texture-fibre: none;
       color-scheme: dark;
     }
+
     html, body {
       margin: 0;
       padding: 0;
@@ -165,8 +307,329 @@ Check your Browserslist config to be sure that your targets are set up correctly
       height: 100vh;
       overflow: hidden;
     }
-    canvas {
+    canvas, #splitter {
       touch-action: none;
+    }
+
+    /* Sans is the default voice of the chrome -- titles and panel headings. Mono
+       is asked for by name in the control rules below, which is every label, bit
+       and pin name in the product, and by the canvas when it draws gate labels.
+
+       Note for anyone extending this: the Tailwind above is a *script*, and it
+       appends its generated stylesheet to <head> at runtime -- after this block.
+       So a Tailwind utility beats anything here at equal specificity. Style
+       through the .ls-* classes rather than trying to override a utility. */
+    body { font-family: var(--font-sans); }
+
+    /* ------------------------------------------------------- control skin */
+
+    /* Chrome command: Run, Step, Undo, Link, Export... Gloss over the surface
+       colour with a hard highlight break at 50%, a white inner edge, and a
+       shadow that settles rather than floats. */
+    .ls-btn {
+      display: inline-flex; align-items: center; gap: var(--space-3);
+      font: var(--text-data); color: var(--text-body);
+      padding: var(--pad-button);
+      border: var(--hairline) solid var(--border-rule);
+      background: var(--gloss), var(--surface-card);
+      box-shadow: var(--highlight-top), var(--shadow-raised);
+      cursor: pointer; transition: var(--transition-control); white-space: nowrap;
+    }
+    /* Hover tints toward accent -- it never just darkens the whole control. */
+    .ls-btn:hover:not([disabled]) {
+      background: var(--gloss), color-mix(in oklab, var(--surface-card) 82%, var(--accent) 18%);
+      border-color: color-mix(in oklab, var(--border-rule) 55%, var(--accent) 45%);
+    }
+    /* Press is a well plus half a pixel down. Never a scale transform. */
+    .ls-btn:active:not([disabled]) {
+      background: var(--surface-sunken); box-shadow: var(--shadow-pressed);
+      transform: translateY(.5px);
+    }
+    .ls-btn:focus-visible { outline: none; box-shadow: var(--highlight-top), var(--shadow-focus); }
+    /* Disabled stays present and readable. Controls are never hidden to say
+       "not now" -- Undo with nothing to undo still tells you Undo exists. */
+    .ls-btn[disabled] { opacity: .4; cursor: not-allowed; box-shadow: var(--shadow-flat); transform: none; }
+    .ls-btn--danger {
+      color: #fff; border-color: color-mix(in oklab, var(--danger) 70%, #000 30%);
+      background: var(--gloss-accent), var(--danger);
+    }
+    .ls-btn--danger:hover:not([disabled]) {
+      background: var(--gloss-accent), color-mix(in oklab, var(--danger) 88%, #000 12%);
+      border-color: color-mix(in oklab, var(--danger) 70%, #000 30%);
+    }
+
+    /* Tool chip. Pressed = the current tool, accent-filled and bold. */
+    .ls-tool {
+      font: var(--text-data); padding: var(--pad-tool);
+      border: var(--hairline) solid var(--border-rule);
+      background: var(--gloss), var(--surface-card);
+      box-shadow: var(--highlight-top), var(--shadow-flat);
+      color: var(--text-body); cursor: pointer; transition: var(--transition-control);
+    }
+    .ls-tool:hover { background: var(--gloss), color-mix(in oklab, var(--surface-card) 84%, var(--accent) 16%); }
+    .ls-tool:active { box-shadow: var(--shadow-pressed); background: var(--surface-sunken); }
+    .ls-tool[aria-pressed="true"] {
+      font-weight: var(--weight-bold); color: var(--accent-ink);
+      border-color: var(--accent-strong);
+      background: var(--gloss-accent), var(--accent);
+      box-shadow: var(--highlight-edge), var(--shadow-pressed);
+    }
+
+    .ls-toolbar {
+      background: var(--gloss), var(--surface-card);
+      border: var(--hairline) solid var(--border-rule);
+      box-shadow: var(--highlight-top), var(--shadow-flat);
+    }
+    .ls-toolbar__label { font: var(--text-label); color: var(--text-muted); }
+
+    /* 1px paper rule, lit from above like everything else on this surface. */
+    .ls-rule--v { width: 1px; align-self: stretch; min-height: 16px; background: var(--border-rule); box-shadow: 1px 0 0 rgba(255,255,255,.7); }
+
+    /* Cards are panels: hairline, paper, white inner edge, settle shadow.
+       No coloured left borders, ever. */
+    .ls-panel {
+      background-color: var(--surface-card);
+      background-image: var(--texture-fibre);
+      border: var(--hairline) solid var(--border-rule);
+      box-shadow: var(--highlight-edge), var(--shadow-panel);
+    }
+    /* Panel heads are top-lit with a hairline under them. */
+    .ls-panel__head {
+      font: var(--text-heading); color: var(--text-strong);
+      background: linear-gradient(180deg, var(--paper-100), var(--surface-sunken));
+      border-bottom: var(--hairline) solid var(--border-rule);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) .ls-panel__head {
+        background: linear-gradient(180deg, var(--ink-700), var(--surface-sunken));
+      }
+    }
+    :root[data-theme="dark"] .ls-panel__head {
+      background: linear-gradient(180deg, var(--ink-700), var(--surface-sunken));
+    }
+
+    /* The board is the one sunken surface in the product: the 24px drafting
+       grid over paper, with a well shadow inside its frame. */
+    .ls-canvas {
+      position: relative;
+      background-color: var(--surface-canvas);
+      background-image: var(--texture-grid);
+      box-shadow: var(--shadow-well);
+    }
+    /* Paper between the grid and the schematic. This has to be a pseudo-element
+       rather than two more background layers on .ls-canvas: syncGrid writes
+       background-size and background-position for exactly the two grid layers,
+       and CSS cycles a short list over a longer one, so any extra layer would
+       inherit the 24px tile and slide with the pan. */
+    .ls-canvas::before {
+      content: ''; position: absolute; inset: 0; pointer-events: none;
+      background-image: var(--texture-fibre);
+    }
+    /* ::before is positioned and the canvas is not, so without this the grain
+       would paint over the gates. Positioning the canvas puts the two in the
+       same layer, where tree order decides -- and the canvas comes second. */
+    .ls-canvas > canvas { position: relative; }
+
+    /* Two grains, one per scale: --texture-paper is pitched for the whole window
+       and lives only here on the shell; --texture-fibre is pitched for a card and
+       lives on the panels and the board. Nothing ever gets both -- which is why
+       .ls-table-card is transparent rather than another opaque sheet. */
+    .ls-paper { background-color: var(--surface-page); background-image: var(--texture-paper); }
+
+    .ls-select select, select.ls-select {
+      appearance: none; -webkit-appearance: none;
+      font: var(--text-data); color: var(--text-body);
+      padding: var(--space-2) var(--space-8) var(--space-2) var(--space-5);
+      border: var(--hairline) solid var(--border-rule);
+      background: var(--gloss), var(--surface-card);
+      box-shadow: var(--highlight-top), var(--shadow-flat);
+      cursor: pointer; transition: var(--transition-control);
+    }
+    select.ls-select:hover { border-color: color-mix(in oklab, var(--border-rule) 55%, var(--accent) 45%); }
+    select.ls-select:focus-visible { outline: none; box-shadow: var(--highlight-top), var(--shadow-focus); }
+    /* CSS caret: the system draws its two remaining marks rather than shipping icons. */
+    .ls-select-wrap { position: relative; display: inline-flex; align-items: center; }
+    .ls-select-wrap::after {
+      content: ""; position: absolute; right: var(--space-5); pointer-events: none;
+      width: 0; height: 0; border-left: 4px solid transparent;
+      border-right: 4px solid transparent; border-top: 5px solid var(--text-muted);
+    }
+
+    .ls-check { font: var(--text-label); color: var(--text-muted); }
+    .ls-check input { accent-color: var(--accent); width: 13px; height: 13px; margin: 0; cursor: pointer; }
+
+    .ls-note { font: var(--text-label); font-weight: var(--weight-bold); }
+    .ls-note--accent { color: var(--text-accent); }
+    .ls-note--warn { color: var(--warn); }
+    .ls-note--muted { color: var(--text-muted); font-weight: var(--weight-regular); }
+
+    /* The zoom cluster: minus, a tabular readout that does not jitter, plus. */
+    .ls-zoom button {
+      font: var(--text-data); line-height: 1;
+      padding: var(--space-1) var(--space-3);
+      border: var(--hairline) solid var(--border-rule);
+      background: var(--gloss), var(--surface-card);
+      color: var(--text-body); cursor: pointer; box-shadow: var(--highlight-top);
+      transition: var(--transition-control);
+      font-variant-numeric: tabular-nums;
+    }
+    .ls-zoom button:hover { background: var(--gloss), var(--surface-sunken); }
+    .ls-zoom button:active { box-shadow: var(--shadow-pressed); }
+
+    .ls-splitter { background: var(--border-rule); box-shadow: var(--highlight-top); transition: background var(--dur-base) var(--ease-aero); }
+    .ls-splitter:hover { background: var(--accent); }
+
+    /* ---- truth tables ---- */
+    /* Transparent, not --surface-card: the card is the same colour as the panel
+       under it, so an opaque fill would buy nothing and would blank out the
+       panel's fibre exactly where the eye spends its time. */
+    .ls-table-card { border: var(--hairline) solid var(--border-rule); background: transparent; box-shadow: var(--shadow-flat); }
+    .ls-table-sig {
+      font: var(--text-label); color: var(--text-muted);
+      background: var(--surface-sunken);
+      border-bottom: var(--hairline) solid var(--border-hard);
+    }
+    .ls-table { font: var(--text-data); font-variant-numeric: tabular-nums; }
+    .ls-table th {
+      background: var(--surface-sunken);
+      border-bottom: var(--hairline) solid var(--border-hard);
+      font-weight: var(--weight-semibold);
+    }
+    .ls-table th, .ls-table td { border-right: var(--hairline) solid var(--border-hard); }
+    .ls-table th:last-child, .ls-table td:last-child { border-right: 0; }
+    .ls-table tbody tr { border-bottom: var(--hairline) solid var(--border-hard); transition: background var(--dur-fast) var(--ease-aero); }
+    .ls-table tbody tr:hover { background: var(--surface-chip); }
+    .ls-cell--on { color: var(--text-accent); font-weight: var(--weight-bold); }
+    .ls-cell--off { color: var(--text-muted); }
+    .ls-cell--unsettled { color: var(--warn); font-weight: var(--weight-bold); }
+    .ls-edge { border-left: var(--hairline) solid var(--border-hard); }
+    /* Header tones say what a column is before you read a single bit: given,
+       derived, or the answer. */
+    .ls-table__head--in { color: var(--text-muted); }
+    .ls-table__head--gate { color: var(--text-strong); }
+    .ls-table__head--out { color: var(--text-accent); }
+    /* Live: the row the board is actually sitting on. Blue, never green, so
+       "where you are" can't be read as "this is high".
+       Qualified through tbody so these outrank the :hover rule above -- a bare
+       .ls-row--live would lose to .ls-table tbody tr:hover and the marker would
+       vanish under the cursor, which is exactly when you are looking at it. */
+    .ls-table tbody tr.ls-row--live,
+    .ls-table tbody tr.ls-row--live:hover {
+      background: var(--row-live); box-shadow: inset 3px 0 0 0 var(--row-live-edge);
+    }
+    /* In transit: under the clock the board is still propagating towards this
+       row. Same stripe, drained of colour -- it is a destination, not a state. */
+    .ls-table tbody tr.ls-row--transit,
+    .ls-table tbody tr.ls-row--transit:hover {
+      background: var(--surface-sunken); box-shadow: inset 3px 0 0 0 var(--border-rule);
+    }
+    /* Mid-cycle: the board is off this row and never coming to rest on it. Amber,
+       the same signal the ~ cells and the header warning use, because it is the
+       same fact -- this circuit does not settle. */
+    .ls-table tbody tr.ls-row--midcycle,
+    .ls-table tbody tr.ls-row--midcycle:hover {
+      background: color-mix(in oklab, var(--surface-card) 88%, var(--warn) 12%);
+      box-shadow: inset 3px 0 0 0 var(--warn);
+    }
+
+    /* ---- old-school menu bar ----
+       Click to open, hover to slide between menus while one is open, Escape or a
+       click away to close. The pre-ribbon behaviour, which is the point. */
+    .ls-menubar {
+      position: relative; display: flex; align-items: stretch; gap: var(--space-1);
+      padding: 0 var(--space-2);
+      background: var(--gloss), var(--surface-card);
+      border-bottom: var(--hairline) solid var(--border-rule);
+      box-shadow: var(--highlight-top), var(--shadow-flat);
+      z-index: 20; flex-shrink: 0;
+    }
+    .ls-menubar__item {
+      font: var(--weight-medium) var(--size-xs)/1 var(--font-sans);
+      color: var(--text-body); background: none; border: 0;
+      padding: var(--space-3) var(--space-5); margin: 2px 0;
+      cursor: pointer; transition: var(--transition-control);
+    }
+    .ls-menubar__item:hover { background: color-mix(in oklab, var(--surface-card) 70%, var(--accent) 30%); }
+    .ls-menubar__item[aria-expanded="true"] {
+      background: var(--gloss-accent), var(--accent);
+      color: var(--accent-ink); box-shadow: var(--shadow-pressed);
+    }
+
+    /* The system's one and only use of transparency: drop-downs and modals. A
+       schematic read through frosted glass would be a bug, not a style, so the
+       panels, the buttons and the board stay opaque. */
+    .ls-menu {
+      position: absolute; top: 100%; left: 0; min-width: 208px;
+      padding: var(--space-2);
+      background: var(--glass);
+      backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+      border: var(--hairline) solid var(--border-rule);
+      box-shadow: var(--highlight-edge), var(--shadow-menu);
+      animation: ls-menu-in var(--dur-base) var(--ease-menu);
+    }
+    /* Menus unfurl from the top edge with a 4px rise. The only other motion in
+       the product is the clock, and the user starts that one. */
+    @keyframes ls-menu-in {
+      from { opacity: 0; transform: translateY(-4px) scaleY(.96); transform-origin: top; }
+      to   { opacity: 1; transform: none; }
+    }
+    .ls-menu__item {
+      display: flex; align-items: center; gap: var(--space-6); width: 100%;
+      text-align: left;
+      font: var(--weight-regular) var(--size-xs)/1.2 var(--font-sans);
+      color: var(--text-body); background: none; border: 0;
+      padding: var(--space-3) var(--space-4); cursor: pointer;
+    }
+    .ls-menu__item:hover { background: var(--gloss-accent), var(--accent); color: var(--accent-ink); }
+    /* Disabled stays present and readable -- a command you cannot use right now
+       is still a command you should be able to find. */
+    .ls-menu__item[disabled] { opacity: .4; cursor: not-allowed; background: none; color: var(--text-muted); }
+    .ls-menu__tick { width: 10px; flex-shrink: 0; font: var(--text-label); }
+    .ls-menu__label { flex: 1; }
+    .ls-menu__shortcut { margin-left: auto; font: var(--text-label); color: var(--text-muted); }
+    .ls-menu__item:hover .ls-menu__shortcut { color: inherit; opacity: .7; }
+    .ls-menu__item[disabled]:hover { background: none; color: var(--text-muted); }
+    .ls-menu__sep { height: 1px; margin: var(--space-2) var(--space-3); background: var(--border-rule); box-shadow: 0 1px 0 rgba(255,255,255,.7); }
+
+    /* ---- modal ---- */
+    .ls-scrim {
+      position: fixed; inset: 0; z-index: 50;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(11,15,25,.28); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+      animation: ls-menu-in var(--dur-base) var(--ease-menu);
+    }
+    .ls-scrim[hidden] { display: none; }
+    .ls-dialog {
+      width: 560px; max-width: 92vw; max-height: 84vh;
+      display: flex; flex-direction: column;
+      background: var(--glass);
+      backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+      border: var(--hairline) solid var(--border-rule);
+      box-shadow: var(--highlight-edge), var(--shadow-menu);
+    }
+    .ls-dialog__body { overflow: auto; padding: var(--space-6); }
+    .ls-dialog__foot {
+      display: flex; justify-content: flex-end; gap: var(--space-4);
+      padding: var(--space-6); border-top: var(--hairline) solid var(--border-rule);
+    }
+    .ls-keys { width: 100%; border-collapse: collapse; }
+    .ls-keys caption {
+      text-align: left; font: var(--text-label); color: var(--text-muted);
+      padding: var(--space-6) 0 var(--space-3);
+    }
+    .ls-keys td { padding: var(--space-3) var(--space-2); vertical-align: baseline; }
+    .ls-keys td:first-child { width: 34%; white-space: nowrap; }
+    .ls-keys tr + tr td { border-top: var(--hairline) solid var(--border-rule); }
+    .ls-keys .desc { font: var(--text-ui); color: var(--text-body); }
+    /* Keycaps: gloss and a hard top highlight, same as every other raised thing
+       in the product, just small. */
+    .ls-kbd {
+      display: inline-block; font: var(--text-data); color: var(--text-body);
+      padding: 2px var(--space-3); margin-right: var(--space-2);
+      border: var(--hairline) solid var(--border-rule);
+      background: var(--gloss), var(--surface-card);
+      box-shadow: var(--highlight-top), var(--shadow-flat);
+      white-space: nowrap;
     }
 
     /* Too small to use. The board needs pointer precision and room for a canvas
@@ -190,27 +653,30 @@ Check your Browserslist config to be sure that your targets are set up correctly
         padding: 2rem 1.5rem;
         box-sizing: border-box;
         text-align: center;
-        background: var(--background);
-        color: var(--foreground);
-        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        background-color: var(--surface-page);
+        background-image: var(--texture-paper);
+        color: var(--text-body);
+        font-family: var(--font-mono);
       }
       #too-small h1 { margin: 0; font-size: 1.05rem; font-weight: 700; }
       #too-small p  { margin: 0; font-size: 0.8rem; line-height: 1.6;
-                      color: var(--muted-foreground); max-width: 22rem; }
+                      color: var(--text-muted); max-width: 22rem; }
+      /* The source's own brand placeholder, kept: no logo exists, so none was
+         invented. A 46x30 rectangle with a 14x2 bar through it. */
       #too-small .mark {
         width: 46px; height: 30px; margin-bottom: 0.5rem;
-        border: 2px solid var(--muted-foreground); border-radius: 4px;
+        border: 2px solid var(--text-muted);
         position: relative;
       }
       #too-small .mark::after {
         content: ""; position: absolute; left: 50%; top: 50%;
         width: 14px; height: 2px; margin: -1px 0 0 -7px;
-        background: var(--muted-foreground);
+        background: var(--text-muted);
       }
     }
   </style>
 </head>
-<body class="bg-[var(--background)] text-[var(--foreground)] antialiased">
+<body class="ls-paper text-[var(--foreground)] antialiased">
 
   <!-- Shown instead of the app on anything phone-sized. See the media query above. -->
   <div id="too-small">
@@ -221,66 +687,71 @@ Check your Browserslist config to be sure that your targets are set up correctly
     <p>Please open it on a computer or a tablet.</p>
   </div>
 
-  <div id="app-shell" class="h-screen w-screen flex flex-col p-4 gap-4 box-border">
+  <div id="app-shell" class="h-screen w-screen flex flex-col box-border">
+
+    <!-- Old-school application menu bar. Every command here is also a button or a
+         key elsewhere; nothing lives only in a menu. Built by renderMenuBar(). -->
+    <div id="menubar" class="ls-menubar"></div>
+
+    <div class="flex-1 min-h-0 flex flex-col p-4 gap-4">
     
     <!-- Top Navbar -->
-    <div class="flex flex-wrap items-center justify-between border-b border-[var(--border)] pb-3 gap-3 shrink-0">
+    <div class="flex flex-wrap items-center justify-between border-b border-[var(--border-rule)] pb-3 gap-3 shrink-0">
       <div>
-        <h1 class="text-[var(--foreground)] font-bold text-lg leading-tight">Logic Gate Sandbox</h1>
+        <h1 class="text-[var(--text-strong)] leading-tight" style="font: var(--text-title)">Logic Gate Sandbox</h1>
       </div>
+      <!-- Three buttons only. Everything else moved into the menu bar above,
+           which is where the commands you use once a session belong; Undo, Delete
+           and the theme also have keys, and the presets have their own menu. The
+           code that syncs #undo-btn, #del-btn, #theme-btn and #preset-select is
+           left in place and guarded -- put any of them back in the markup and it
+           starts working again with no other change. -->
       <div class="flex gap-2 flex-wrap items-center">
-        <button onclick="toggleRun()" id="run-btn" title="Run / pause the clock (Space)" class="px-3 py-1 border border-[var(--border)] text-xs rounded-lg hover:bg-[var(--card)] font-mono">Run</button>
-        <button onclick="stepOnce()" class="px-3 py-1 border border-[var(--border)] text-xs rounded-lg hover:bg-[var(--card)] font-mono">Step</button>
-        <button onclick="undo()" id="undo-btn" class="px-3 py-1 border border-[var(--border)] text-xs rounded-lg hover:bg-[var(--card)] font-mono disabled:opacity-40 disabled:cursor-not-allowed" disabled>Undo</button>
-        <button onclick="deleteSelected()" id="del-btn" class="px-3 py-1 bg-red-600 text-white rounded-lg text-xs hover:opacity-90 font-mono disabled:opacity-40 disabled:cursor-not-allowed" disabled>Delete</button>
-        <button onclick="cycleTheme()" id="theme-btn" class="px-3 py-1 border border-[var(--border)] text-xs rounded-lg hover:bg-[var(--card)] font-mono">Auto</button>
-        <select onchange="loadPreset(this.value)" id="preset-select" class="px-2 py-1 border border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] text-xs rounded-lg font-mono cursor-pointer"></select>
-        <button onclick="shareLink()" class="px-3 py-1 border border-[var(--border)] text-xs rounded-lg hover:bg-[var(--card)] font-mono">Link</button>
-        <button onclick="exportBoard()" class="px-3 py-1 border border-[var(--border)] text-xs rounded-lg hover:bg-[var(--card)] font-mono">Export</button>
-        <button onclick="importBoard()" class="px-3 py-1 border border-[var(--border)] text-xs rounded-lg hover:bg-[var(--card)] font-mono">Import</button>
-        <button onclick="clearCanvas()" class="px-3 py-1 border border-[var(--border)] text-xs rounded-lg hover:bg-[var(--card)] font-mono">Clear</button>
+        <button onclick="toggleRun()" id="run-btn" title="Run / pause the clock (Space)" class="ls-btn">Run</button>
+        <button onclick="stepOnce()" title="Advance the clock one tick" class="ls-btn">Step</button>
+        <button onclick="clearCanvas()" class="ls-btn">Clear</button>
       </div>
     </div>
 
     <!-- Tool Selector Toolbar (Gates Row) -->
-    <div class="flex flex-wrap items-center gap-1.5 p-2 bg-[var(--card)] border border-[var(--border)] rounded-xl shrink-0">
-      <span class="text-xs font-mono text-[var(--muted-foreground)] mr-2">Tools:</span>
-      <button onclick="setTool('select')" id="tool-select" class="tool-btn px-2.5 py-1 text-xs rounded-lg border font-mono font-bold transition-all bg-[var(--primary)] text-[var(--primary-foreground)] border-[var(--primary)]">
+    <div class="ls-toolbar flex flex-wrap items-center gap-1.5 p-2 shrink-0">
+      <span class="ls-toolbar__label mr-2">Tools:</span>
+      <button onclick="setTool('select')" id="tool-select" class="ls-tool tool-btn" aria-pressed="true">
         Pointer
       </button>
-      <button onclick="setTool('pan')" id="tool-pan" title="Drag the board around (H, or hold Option/Alt with any tool)" class="tool-btn px-2.5 py-1 text-xs rounded-lg border font-mono transition-all bg-[var(--background)] border-[var(--border)] hover:bg-[var(--card)]">
+      <button onclick="setTool('pan')" id="tool-pan" title="Drag the board around (H, or hold Option/Alt with any tool)" class="ls-tool tool-btn" aria-pressed="false">
         Pan
       </button>
-      <div class="w-[1px] h-4 bg-[var(--border)] mx-1"></div>
-      <button onclick="setTool('INPUT')" id="tool-INPUT" class="tool-btn px-2.5 py-1 text-xs rounded-lg border font-mono transition-all bg-[var(--background)] border-[var(--border)] hover:bg-[var(--card)]">
+      <div class="ls-rule--v mx-1"></div>
+      <button onclick="setTool('INPUT')" id="tool-INPUT" class="ls-tool tool-btn" aria-pressed="false">
         IN
       </button>
-      <button onclick="setTool('OUTPUT')" id="tool-OUTPUT" class="tool-btn px-2.5 py-1 text-xs rounded-lg border font-mono transition-all bg-[var(--background)] border-[var(--border)] hover:bg-[var(--card)]">
+      <button onclick="setTool('OUTPUT')" id="tool-OUTPUT" class="ls-tool tool-btn" aria-pressed="false">
         OUT
       </button>
-      <div class="w-[1px] h-4 bg-[var(--border)] mx-1"></div>
-      <button onclick="setTool('AND')" id="tool-AND" class="tool-btn px-2.5 py-1 text-xs rounded-lg border font-mono transition-all bg-[var(--background)] border-[var(--border)] hover:bg-[var(--card)]">
+      <div class="ls-rule--v mx-1"></div>
+      <button onclick="setTool('AND')" id="tool-AND" class="ls-tool tool-btn" aria-pressed="false">
         AND
       </button>
-      <button onclick="setTool('OR')" id="tool-OR" class="tool-btn px-2.5 py-1 text-xs rounded-lg border font-mono transition-all bg-[var(--background)] border-[var(--border)] hover:bg-[var(--card)]">
+      <button onclick="setTool('OR')" id="tool-OR" class="ls-tool tool-btn" aria-pressed="false">
         OR
       </button>
-      <button onclick="setTool('XOR')" id="tool-XOR" class="tool-btn px-2.5 py-1 text-xs rounded-lg border font-mono transition-all bg-[var(--background)] border-[var(--border)] hover:bg-[var(--card)]">
+      <button onclick="setTool('XOR')" id="tool-XOR" class="ls-tool tool-btn" aria-pressed="false">
         XOR
       </button>
-      <button onclick="setTool('NOT')" id="tool-NOT" class="tool-btn px-2.5 py-1 text-xs rounded-lg border font-mono transition-all bg-[var(--background)] border-[var(--border)] hover:bg-[var(--card)]">
+      <button onclick="setTool('NOT')" id="tool-NOT" class="ls-tool tool-btn" aria-pressed="false">
         NOT
       </button>
-      <button onclick="setTool('BUF')" id="tool-BUF" class="tool-btn px-2.5 py-1 text-xs rounded-lg border font-mono transition-all bg-[var(--background)] border-[var(--border)] hover:bg-[var(--card)]">
+      <button onclick="setTool('BUF')" id="tool-BUF" class="ls-tool tool-btn" aria-pressed="false">
         BUF
       </button>
-      <button onclick="setTool('NAND')" id="tool-NAND" class="tool-btn px-2.5 py-1 text-xs rounded-lg border font-mono transition-all bg-[var(--background)] border-[var(--border)] hover:bg-[var(--card)]">
+      <button onclick="setTool('NAND')" id="tool-NAND" class="ls-tool tool-btn" aria-pressed="false">
         NAND
       </button>
-      <button onclick="setTool('NOR')" id="tool-NOR" class="tool-btn px-2.5 py-1 text-xs rounded-lg border font-mono transition-all bg-[var(--background)] border-[var(--border)] hover:bg-[var(--card)]">
+      <button onclick="setTool('NOR')" id="tool-NOR" class="ls-tool tool-btn" aria-pressed="false">
         NOR
       </button>
-      <button onclick="setTool('XNOR')" id="tool-XNOR" class="tool-btn px-2.5 py-1 text-xs rounded-lg border font-mono transition-all bg-[var(--background)] border-[var(--border)] hover:bg-[var(--card)]">
+      <button onclick="setTool('XNOR')" id="tool-XNOR" class="ls-tool tool-btn" aria-pressed="false">
         XNOR
       </button>
     </div>
@@ -288,46 +759,58 @@ Check your Browserslist config to be sure that your targets are set up correctly
     <!-- Main Workspace Splitter -->
     <div id="workspace" class="flex flex-1 flex-col md:flex-row gap-4 min-h-0 overflow-hidden">
       <!-- Interactive Schematic Area -->
-      <div class="flex-1 border border-[var(--border)] bg-[var(--card)] rounded-xl overflow-hidden relative flex flex-col min-h-0">
-        <div id="canvas-header" class="bg-[var(--background)] border-b border-[var(--border)] px-3 py-2 text-xs font-semibold shrink-0 flex justify-between">
+      <div class="ls-panel flex-1 overflow-hidden relative flex flex-col min-h-0">
+        <div id="canvas-header" class="ls-panel__head px-3 py-2 shrink-0 flex justify-between items-center">
           <span>Workspace Canvas</span>
           <span class="flex items-center gap-3">
-            <span id="clip-indicator" class="text-[var(--muted-foreground)] hidden font-mono">0 on clipboard</span>
-            <span id="stability-indicator" class="text-[#f59e0b] hidden font-mono font-bold">Oscillating &mdash; <b>&sim;</b> marks rows that never settle. Tick &ldquo;Show (t)&rdquo; to read them.</span>
-            <span id="placement-indicator" class="text-[var(--primary)] hidden font-mono font-bold">Click canvas to place gate &middot; hold Shift for several</span>
-            <span class="flex items-center gap-1 font-mono font-normal">
-              <button onclick="zoomBy(1/1.25)" title="Zoom out (−)" class="px-1.5 leading-none py-0.5 border border-[var(--border)] rounded hover:bg-[var(--card)]">&minus;</button>
-              <button onclick="zoomFit()" id="zoom-label" title="Fit the board to the window (0)" class="px-1.5 py-0.5 border border-[var(--border)] rounded hover:bg-[var(--card)] tabular-nums">100%</button>
-              <button onclick="zoomBy(1.25)" title="Zoom in (+)" class="px-1.5 leading-none py-0.5 border border-[var(--border)] rounded hover:bg-[var(--card)]">+</button>
+            <span id="clip-indicator" class="ls-note ls-note--muted hidden">0 on clipboard</span>
+            <span id="stability-indicator" class="ls-note ls-note--warn hidden">Oscillating &mdash; <b>&sim;</b> marks rows that never settle. Tick &ldquo;Show (t)&rdquo; to read them.</span>
+            <span id="placement-indicator" class="ls-note ls-note--accent hidden">Click canvas to place gate &middot; hold Shift for several</span>
+            <span class="ls-zoom flex items-center gap-1">
+              <button onclick="zoomBy(1/1.25)" title="Zoom out (−)">&minus;</button>
+              <button onclick="zoomFit()" id="zoom-label" title="Fit the board to the window (0)" class="tabular-nums">100%</button>
+              <button onclick="zoomBy(1.25)" title="Zoom in (+)">+</button>
             </span>
           </span>
         </div>
-        <div class="flex-1 relative overflow-hidden bg-[var(--background)]">
+        <div id="board-frame" class="ls-canvas flex-1 relative overflow-hidden">
           <canvas id="sandbox" class="w-full h-full block"></canvas>
         </div>
       </div>
 
       <!-- Drag to resize; double-click to reset -->
       <div id="splitter" title="Drag to resize · double-click to reset"
-           class="hidden md:block w-1.5 shrink-0 self-stretch rounded-full cursor-col-resize bg-[var(--border)] hover:bg-[var(--primary)] transition-colors"></div>
+           class="ls-splitter hidden md:block w-1.5 shrink-0 self-stretch cursor-col-resize"></div>
 
       <!-- Truth Table Sidebar -->
-      <div id="sidebar" class="md:w-80 w-full flex flex-col border border-[var(--border)] bg-[var(--card)] rounded-xl p-3 shrink-0 overflow-hidden min-h-[150px] md:min-h-0">
-        <div class="shrink-0 pb-2 flex items-center justify-between gap-2 flex-wrap">
-          <h3 class="text-sm font-semibold">Truth Tables</h3>
+      <div id="sidebar" class="ls-panel md:w-80 w-full flex flex-col shrink-0 overflow-hidden min-h-[150px] md:min-h-0">
+        <div class="ls-panel__head shrink-0 px-3 py-2 flex items-center justify-between gap-2 flex-wrap">
+          <h3>Truth Tables</h3>
           <!-- Column toggles: internal gates, and the state(t)/state(t+1) pair -->
           <div class="flex items-center gap-3">
-            <label class="flex items-center gap-1.5 cursor-pointer text-[10px] font-mono text-[var(--muted-foreground)] select-none">
-              <input type="checkbox" id="toggle-gates" onchange="updateTruthTable()" class="accent-[var(--primary)] bg-[var(--background)] border-[var(--border)] rounded">
+            <label class="ls-check flex items-center gap-1.5 cursor-pointer select-none">
+              <input type="checkbox" id="toggle-gates" onchange="updateTruthTable()">
               Show Gates
             </label>
-            <label class="flex items-center gap-1.5 cursor-pointer text-[10px] font-mono text-[var(--muted-foreground)] select-none">
-              <input type="checkbox" id="toggle-state" onchange="updateTruthTable()" class="accent-[var(--primary)] bg-[var(--background)] border-[var(--border)] rounded">
+            <label class="ls-check flex items-center gap-1.5 cursor-pointer select-none">
+              <input type="checkbox" id="toggle-state" onchange="updateTruthTable()">
               Show (t)
             </label>
           </div>
         </div>
-        <div id="tables" class="flex-1 overflow-auto flex flex-col gap-3"></div>
+        <div id="tables" class="flex-1 overflow-auto flex flex-col gap-3 p-3"></div>
+      </div>
+    </div>
+    </div>
+  </div>
+
+  <!-- Keyboard shortcuts. Hidden until Help > Keyboard Shortcuts or "?". -->
+  <div id="shortcuts" class="ls-scrim" hidden onmousedown="if (event.target === this) closeShortcuts()">
+    <div class="ls-dialog" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
+      <div class="ls-panel__head px-3 py-2">Keyboard Shortcuts</div>
+      <div class="ls-dialog__body" id="shortcuts-body"></div>
+      <div class="ls-dialog__foot">
+        <button type="button" class="ls-btn" onclick="closeShortcuts()">Close</button>
       </div>
     </div>
   </div>
@@ -353,6 +836,12 @@ Check your Browserslist config to be sure that your targets are set up correctly
 
     const canvas = document.getElementById('sandbox');
     const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      // Every ctx.* call below would throw on the next line, leaving a blank page
+      // and no clue why. Say so instead.
+      document.body.textContent = 'This browser could not provide a 2D canvas, so the sandbox cannot run.';
+      throw new Error('no 2d context');
+    }
     
     let nodes = [];
     let connections = []; 
@@ -365,6 +854,7 @@ Check your Browserslist config to be sure that your targets are set up correctly
     let dragBefore = null;
     
     let panDrag = null;
+    let pinch = null;
     let dragOffset = { x: 0, y: 0 };
     let connectionWire = null; 
     let selectionBox = null; 
@@ -383,6 +873,7 @@ Check your Browserslist config to be sure that your targets are set up correctly
       const rect = canvas.getBoundingClientRect();
       if (!rect.width || !rect.height) return;
       const dpr = window.devicePixelRatio || 1;
+      backingDpr = dpr;
       viewW = rect.width;
       viewH = rect.height;
       canvas.width = Math.round(rect.width * dpr);
@@ -392,6 +883,25 @@ Check your Browserslist config to be sure that your targets are set up correctly
     }
     window.addEventListener('resize', resize);
     new ResizeObserver(resize).observe(canvas);
+
+    // Dragging the window to a monitor of a different density changes
+    // devicePixelRatio without changing the element's CSS size, so neither of the
+    // two listeners above fires -- and the backing store stays sized for the old
+    // density while draw() scales for the new one. A resolution media query fires
+    // exactly once per change, so re-arm it each time at the new ratio.
+    function watchPixelRatio() {
+      if (!window.matchMedia) return;
+      let mq;
+      try { mq = window.matchMedia(`(resolution: ${window.devicePixelRatio || 1}dppx)`); }
+      catch (e) { return; }   // Safari before 16 has no resolution query; draw() copes
+      const rearm = () => { resize(); watchPixelRatio(); };
+      if (mq.addEventListener) mq.addEventListener('change', rearm, { once: true });
+      else if (mq.addListener) {
+        const once = () => { mq.removeListener(once); rearm(); };
+        mq.addListener(once);
+      }
+    }
+    watchPixelRatio();
 
     // ---- preset circuits -------------------------------------------------------
     // A named `nm` is pinned (fixed) so assignNames leaves it alone; unnamed gates
@@ -537,6 +1047,7 @@ Check your Browserslist config to be sure that your targets are set up correctly
       if (nodes.length || connections.length) pushHistory();
       stopRun();
       const built = preset.build();
+      resetCycleWatch();
       nodes = built.nodes;
       connections = built.connections;
       nextId = nodes.reduce((m, n) => Math.max(m, n.id), 0) + 1;
@@ -575,6 +1086,18 @@ Check your Browserslist config to be sure that your targets are set up correctly
     // crafted payload rather than a board, and the whole code is refused.
     const NAME_OK = /^[A-Za-z0-9_'+-]{1,12}$/;
 
+    // MAX_CODE_NODES only ever bounded the LGS2 decoder. These bound every route
+    // into restoreBoard -- LGS1, a raw autosave, anything -- so a payload cannot
+    // exhaust memory. Far above any board built by hand.
+    const MAX_BOARD_NODES = 4000;
+    const MAX_BOARD_WIRES = 8000;
+
+    // Number(x) || 0 catches NaN, which is falsy, but not Infinity, which is not.
+    function safeCoord(v) {
+      const n = Number(v);
+      return Number.isFinite(n) ? Math.max(0, Math.min(WORLD_W, n)) : 0;
+    }
+
     function heightFor(type) {
       return ['AND', 'OR', 'XOR', 'NAND', 'NOR', 'XNOR'].includes(type) ? 44 : 36;
     }
@@ -595,33 +1118,47 @@ Check your Browserslist config to be sure that your targets are set up correctly
     // payload is malformed, so a bad share code can't wipe your work.
     function restoreBoard(data) {
       if (!data || data.v !== BOARD_VERSION || !Array.isArray(data.n) || !Array.isArray(data.c)) return false;
+      if (data.n.length > MAX_BOARD_NODES || data.c.length > MAX_BOARD_WIRES) return false;
 
       const seen = new Set();
       const built = [];
       for (const t of data.n) {
         if (!Array.isArray(t) || t.length < 5) return false;
         const [id, type, x, y, val, name] = t;
-        if (typeof id !== 'number' || !KNOWN_TYPES.includes(type)) return false;
+        // typeof Infinity is 'number', and JSON happily carries 1e999. An
+        // Infinity id makes nextId Infinity, so every gate placed afterwards
+        // collides with it and one delete removes them all.
+        if (!Number.isInteger(id) || id < 1 || !KNOWN_TYPES.includes(type)) return false;
         if (seen.has(id)) return false;
         if (name && !NAME_OK.test(String(name))) return false;
         seen.add(id);
         built.push({
           id, type, name: name || '', fixed: !!name,
-          x: Number(x) || 0, y: Number(y) || 0,
+          x: safeCoord(x), y: safeCoord(y),
           w: 70, h: heightFor(type), val: !!val
         });
       }
 
       const wires = [];
+      const filled = new Set();
       for (const t of data.c) {
         if (!Array.isArray(t) || t.length < 3) return false;
         const [from, to, toInput] = t;
         // Drop rather than reject: a wire to a missing node is recoverable.
         if (!seen.has(from) || !seen.has(to)) continue;
-        wires.push({ from, to, toInput: Number(toInput) || 0 });
+        const pin = Number(toInput) || 0;
+        // Wiring a pin in the UI evicts whatever was on it, so a board built by
+        // hand can never have two wires on one input. A crafted payload can, and
+        // the second one is drawn like any other wire but never read -- it looks
+        // connected and does nothing, and deleting the first makes the output jump.
+        const key = to + ':' + pin;
+        if (filled.has(key)) continue;
+        filled.add(key);
+        wires.push({ from, to, toInput: pin });
       }
 
       stopRun();
+      resetCycleWatch();
       nodes = built;
       connections = wires;
       nextId = nodes.reduce((m, n) => Math.max(m, n.id), 0) + 1;
@@ -667,6 +1204,10 @@ Check your Browserslist config to be sure that your targets are set up correctly
     // Call BEFORE mutating. Pass a snapshot taken earlier when the change only
     // becomes known after the fact (a drag that turned out to move something).
     function pushHistory(snap) {
+      // Every undoable change funnels through here -- a gate placed, a wire cut,
+      // an input double-clicked. All of them make the old cycle a different
+      // circuit's cycle.
+      resetCycleWatch();
       history.push(snap === undefined ? snapshot() : snap);
       if (history.length > HISTORY_LIMIT) history.shift();
       syncUndoButton();
@@ -675,6 +1216,13 @@ Check your Browserslist config to be sure that your targets are set up correctly
     function syncUndoButton() {
       const btn = document.getElementById('undo-btn');
       if (btn) btn.disabled = history.length === 0;
+    }
+
+    // Delete lives in the Edit menu now, which reads its own enabled state on
+    // every open -- but the button is still supported if it is put back.
+    function syncDeleteButton() {
+      const btn = document.getElementById('del-btn');
+      if (btn) btn.disabled = !(selectedNodes.length || selectedConnection);
     }
 
     function undo() {
@@ -826,6 +1374,7 @@ Check your Browserslist config to be sure that your targets are set up correctly
       }
       const btn = document.getElementById('theme-btn');
       if (btn) btn.textContent = THEME_LABEL[theme];
+      invalidateTheme();
       try { localStorage.setItem('lgs-theme', theme); } catch (e) { /* file:// may block storage */ }
       draw();   // canvas colours are read out of the CSS vars at paint time
     }
@@ -842,7 +1391,7 @@ Check your Browserslist config to be sure that your targets are set up correctly
       // Following the OS means repainting the canvas when the OS flips.
       if (window.matchMedia) {
         const mq = window.matchMedia('(prefers-color-scheme: dark)');
-        const onChange = () => { if (theme === 'auto') draw(); };
+        const onChange = () => { if (theme === 'auto') { invalidateTheme(); draw(); } };
         if (mq.addEventListener) mq.addEventListener('change', onChange);
         else if (mq.addListener) mq.addListener(onChange);
       }
@@ -857,6 +1406,8 @@ Check your Browserslist config to be sure that your targets are set up correctly
 
     function init() {
       initPresetPicker();
+      initMenuBar();
+      closeShortcuts();   // the attribute says hidden; say it in the property too
       initSplitter();
       initRowJump();
       if (!loadAutosave()) loadPreset('sr-latch');
@@ -870,6 +1421,12 @@ Check your Browserslist config to be sure that your targets are set up correctly
       initTheme();
       syncZoomLabel();
       resize();
+      // Gate labels are measured and painted once, so a webfont that arrives
+      // after the first paint would leave the schematic in the fallback face
+      // until something else happened to trigger a redraw.
+      if (document.fonts && document.fonts.ready && document.fonts.ready.then) {
+        document.fonts.ready.then(() => { invalidateTheme(); requestDraw(); });
+      }
     }
 
     // Auto-letters every node, except ones flagged `fixed` (preset circuits name
@@ -923,13 +1480,14 @@ Check your Browserslist config to be sure that your targets are set up correctly
 
     function setTool(tool) {
       activeTool = tool;
+      // The pressed look is a CSS rule on [aria-pressed="true"], so the only
+      // thing to change here is the fact -- which is also what a screen reader
+      // reads out. Rewriting className would throw away the layout classes too.
       document.querySelectorAll('.tool-btn').forEach(btn => {
-        btn.className = "tool-btn px-2.5 py-1 text-xs rounded-lg border font-mono transition-all bg-[var(--background)] border-[var(--border)] text-[var(--foreground)] hover:bg-[var(--card)]";
+        btn.setAttribute('aria-pressed', 'false');
       });
       const activeBtn = document.getElementById(`tool-${tool}`);
-      if (activeBtn) {
-        activeBtn.className = "tool-btn px-2.5 py-1 text-xs rounded-lg border font-mono font-bold transition-all bg-[var(--primary)] text-[var(--primary-foreground)] border-[var(--primary)]";
-      }
+      if (activeBtn) activeBtn.setAttribute('aria-pressed', 'true');
 
       const indicator = document.getElementById('placement-indicator');
       if (tool === 'select' || tool === 'pan') {
@@ -978,21 +1536,21 @@ Check your Browserslist config to be sure that your targets are set up correctly
         selectedNodes = [node];
       }
       selectedConnection = null;
-      document.getElementById('del-btn').disabled = false;
+      syncDeleteButton();
       draw();
     }
 
     function selectConnection(conn) {
       selectedConnection = conn;
       selectedNodes = [];
-      document.getElementById('del-btn').disabled = false;
+      syncDeleteButton();
       draw();
     }
 
     function clearSelection() {
       selectedNodes = [];
       selectedConnection = null;
-      document.getElementById('del-btn').disabled = true;
+      syncDeleteButton();
       draw();
     }
 
@@ -1039,7 +1597,7 @@ Check your Browserslist config to be sure that your targets are set up correctly
 
       selectedNodes = fresh;
       selectedConnection = null;
-      document.getElementById('del-btn').disabled = false;
+      syncDeleteButton();
       assignNames();
       evaluate();
       draw();
@@ -1075,9 +1633,224 @@ Check your Browserslist config to be sure that your targets are set up correctly
       }
     }
 
+
+    // ---------------------------------------------------------------- menu bar
+    // Every command below is also a button in the chrome or a key on the board.
+    // Nothing lives only in a menu -- the menu is a second way in, not the way in,
+    // so a browser that renders none of this still drives the whole app.
+
+    // Cmd on macOS, Ctrl everywhere else -- the same test the key handler makes.
+    const MAC = /Mac|iPhone|iPad|iPod/.test((navigator && (navigator.platform || navigator.userAgent)) || '');
+    const MOD = MAC ? '⌘' : 'Ctrl+';
+
+    const menuChecked = id => {
+      const el = document.getElementById(id);
+      return !!(el && el.checked);
+    };
+    const toggleColumn = id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.checked = !el.checked;
+      updateTruthTable();
+    };
+    const hasSelection = () => selectedNodes.length > 0 || !!selectedConnection;
+
+    // `label`, `checked` and `enabled` may be functions: the menu is rebuilt on
+    // every open, so they are re-read each time and a tick is never stale.
+    const MENUS = [
+      { label: 'File', items: [
+        { label: 'Import Code…',  run: importBoard },
+        { label: 'Export Code…',  run: exportBoard },
+        { label: 'Copy Share Link', run: shareLink },
+        { separator: true },
+        { label: 'Clear Board', run: clearCanvas },
+      ]},
+      { label: 'Edit', items: [
+        { label: 'Undo', shortcut: MOD + 'Z', run: undo, enabled: () => history.length > 0 },
+        { separator: true },
+        { label: 'Copy',  shortcut: MOD + 'C', run: copySelection, enabled: hasSelection },
+        { label: 'Cut',   shortcut: MOD + 'X', run: () => { copySelection(); deleteSelected(); draw(); }, enabled: hasSelection },
+        { label: 'Paste', shortcut: MOD + 'V', run: pasteClipboard, enabled: () => !!clipboard },
+        { separator: true },
+        { label: 'Delete Selection', shortcut: '⌫', run: deleteSelected, enabled: hasSelection },
+      ]},
+      { label: 'Circuit', items: [
+        { label: () => (running ? 'Pause Clock' : 'Run Clock'), shortcut: 'Space', run: toggleRun },
+        { label: 'Step Once', run: stepOnce },
+        { separator: true },
+      ].concat(Object.keys(PRESETS).map(key => ({
+        label: PRESETS[key].label,
+        run: () => {
+          loadPreset(key);
+          // Keep the picker honest -- it is the same command by another route.
+          const picker = document.getElementById('preset-select');
+          if (picker) picker.value = key;
+        },
+      })))},
+      { label: 'View', items: [
+        { label: 'Show Gates', checked: () => menuChecked('toggle-gates'), run: () => toggleColumn('toggle-gates') },
+        { label: 'Show (t)',   checked: () => menuChecked('toggle-state'), run: () => toggleColumn('toggle-state') },
+        { separator: true },
+        { label: 'Zoom In',        shortcut: '+', run: () => zoomBy(1.25) },
+        { label: 'Zoom Out',       shortcut: '−', run: () => zoomBy(1 / 1.25) },
+        { label: 'Fit to Window',  shortcut: '0', run: zoomFit },
+        { separator: true },
+      ].concat(THEMES.map(name => ({
+        label: 'Theme: ' + THEME_LABEL[name],
+        checked: () => theme === name,
+        run: () => applyTheme(name),
+      })))},
+      { label: 'Help', items: [
+        { label: 'Keyboard Shortcuts', shortcut: '?', run: showShortcuts },
+      ]},
+    ];
+
+    let menuOpen = -1;   // index into MENUS, or -1 for closed
+    const resolve = (v, fallback) => (typeof v === 'function' ? v() : (v === undefined ? fallback : v));
+
+    function renderMenuBar() {
+      const bar = document.getElementById('menubar');
+      if (!bar) return;
+      let html = '';
+      MENUS.forEach((menu, i) => {
+        const open = i === menuOpen;
+        html += `<div class="relative flex">`
+          + `<button type="button" class="ls-menubar__item" aria-expanded="${open}" data-menu="${i}">`
+          + `${esc(menu.label)}</button>`;
+        if (open) {
+          html += `<div class="ls-menu" role="menu">`;
+          menu.items.forEach((item, j) => {
+            if (item.separator) { html += `<div class="ls-menu__sep"></div>`; return; }
+            const on = resolve(item.checked, false);
+            const usable = resolve(item.enabled, true);
+            html += `<button type="button" role="menuitem" class="ls-menu__item"`
+              + ` data-menu="${i}" data-item="${j}"${usable ? '' : ' disabled'}>`
+              + `<span class="ls-menu__tick">${on ? '✓' : ''}</span>`
+              + `<span class="ls-menu__label">${esc(resolve(item.label, ''))}</span>`
+              + (item.shortcut ? `<span class="ls-menu__shortcut">${esc(item.shortcut)}</span>` : '')
+              + `</button>`;
+          });
+          html += `</div>`;
+        }
+        html += `</div>`;
+      });
+      bar.innerHTML = html;
+    }
+
+    function openMenu(i) { menuOpen = i; renderMenuBar(); }
+    function closeMenu() {
+      if (menuOpen < 0) return;
+      menuOpen = -1;
+      renderMenuBar();
+    }
+
+    function initMenuBar() {
+      const bar = document.getElementById('menubar');
+      if (!bar) return;
+      renderMenuBar();
+
+      // One delegated listener on the bar, because the contents are replaced on
+      // every open and per-button handlers would go with them.
+      bar.addEventListener('click', e => {
+        const btn = e.target && e.target.closest && e.target.closest('[data-menu]');
+        if (!btn) return;
+        const i = Number(btn.getAttribute('data-menu'));
+        const j = btn.getAttribute('data-item');
+        if (j === null) { menuOpen === i ? closeMenu() : openMenu(i); return; }
+        const item = MENUS[i] && MENUS[i].items[Number(j)];
+        if (!item || !resolve(item.enabled, true)) return;
+        closeMenu();
+        if (item.run) item.run();
+      });
+
+      // Hover slides between menus once one is open -- the pre-ribbon behaviour.
+      bar.addEventListener('mouseover', e => {
+        if (menuOpen < 0) return;
+        const btn = e.target && e.target.closest && e.target.closest('[data-menu]:not([data-item])');
+        if (!btn) return;
+        const i = Number(btn.getAttribute('data-menu'));
+        if (i !== menuOpen) openMenu(i);
+      });
+
+      // mousedown, not click: a menu that survives until mouseup would swallow
+      // the first click of whatever you were actually reaching for.
+      document.addEventListener('mousedown', e => {
+        if (menuOpen < 0) return;
+        if (bar.contains && bar.contains(e.target)) return;
+        closeMenu();
+      });
+    }
+
+    // ------------------------------------------------------- keyboard shortcuts
+    // The list is written out rather than derived from the key handler: several
+    // of these are mouse gestures with no key at all, and the handler cannot
+    // explain what Option-drag does.
+    const SHORTCUTS = [
+      ['Board', [
+        ['Space', 'Run or pause the clock'],
+        ['V', 'Pointer tool'],
+        ['H', 'Pan tool — or hold Option/Alt with any tool'],
+        ['Esc', 'Back to the pointer, and drop the selection'],
+      ]],
+      ['Editing', [
+        [MOD + 'Z', 'Undo'],
+        [MOD + 'C', 'Copy the selection'],
+        [MOD + 'X', 'Cut the selection'],
+        [MOD + 'V', 'Paste'],
+        ['⌫', 'Delete the selection'],
+        ['⇧ click', 'Add a gate to the selection'],
+        ['⇧ place', 'Keep the tool loaded and place several'],
+      ]],
+      ['View', [
+        ['+', 'Zoom in'],
+        ['−', 'Zoom out'],
+        ['0', 'Fit the board to the window'],
+        [MOD + 'scroll', 'Zoom about the cursor'],
+        ['Scroll', 'Pan the board'],
+        ['Middle-drag', 'Pan the board'],
+        ['Double-click', 'Reset the sidebar width, on the splitter'],
+      ]],
+      ['Help', [
+        ['?', 'This list'],
+      ]],
+    ];
+
+    function showShortcuts() {
+      const box = document.getElementById('shortcuts');
+      const body = document.getElementById('shortcuts-body');
+      if (!box || !body) return;
+      body.innerHTML = SHORTCUTS.map(([group, rows]) =>
+        `<table class="ls-keys"><caption>${esc(group)}</caption><tbody>`
+        + rows.map(([key, what]) =>
+            `<tr><td><span class="ls-kbd">${esc(key)}</span></td>`
+            + `<td class="desc">${esc(what)}</td></tr>`).join('')
+        + `</tbody></table>`).join('');
+      box.hidden = false;
+    }
+
+    function closeShortcuts() {
+      const box = document.getElementById('shortcuts');
+      if (box) box.hidden = true;
+    }
+
+    const shortcutsOpen = () => {
+      const box = document.getElementById('shortcuts');
+      return !!(box && !box.hidden);
+    };
+
     window.addEventListener('keydown', e => {
       const t = e.target;
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+
+      // An open menu or dialog owns the keyboard. Escape backs out of one layer
+      // at a time -- dialog, then menu, then the tool -- rather than all three.
+      if (e.key === 'Escape') {
+        if (shortcutsOpen()) { e.preventDefault(); closeShortcuts(); return; }
+        if (menuOpen >= 0)   { e.preventDefault(); closeMenu(); return; }
+      }
+      if (shortcutsOpen()) return;
+      if (e.key === '?') { e.preventDefault(); closeMenu(); showShortcuts(); return; }
+
       const mod = e.metaKey || e.ctrlKey;   // Cmd on macOS, Ctrl elsewhere
       if (mod) {
         const k = e.key.toLowerCase();
@@ -1154,30 +1927,57 @@ Check your Browserslist config to be sure that your targets are set up correctly
     // that a net is live, not a lighting effect. 0 disables it.
     const GLOW = 4;
 
+    // The current selection as a Set, rebuilt each frame. Only draw() and the
+    // symbol helper it calls ever look at this.
+    let drawSelected = new Set();
+
     const MAX_ITERATIONS = 200;
     let unstable = false;
+    // Gate evaluations the last settle() actually performed. The truth table's
+    // up-front estimate assumes one pass per row; a row that never settles burns
+    // all MAX_ITERATIONS, so the sweep watches this running total instead.
+    let lastSettleWork = 0;
+
+    // Who feeds whom, resolved once. Without this, gateValue scans every wire and
+    // every node on every call -- and settle calls it for every gate on every pass,
+    // for every row of the table. That is where the time goes on a big board.
+    // The graph cannot change midway through a settle or a draw, so callers build
+    // one of these up front and pass it down; omitting it still works, just slowly.
+    function buildIdMap() {
+      const byId = new Map();
+      for (const n of nodes) byId.set(n.id, n);
+      return byId;
+    }
+
+    function buildIndex() {
+      const byId = buildIdMap();
+      const sources = new Map();
+      for (const n of nodes) sources.set(n.id, [null, null]);
+      for (const c of connections) {
+        const pins = sources.get(c.to);
+        const src = byId.get(c.from);
+        // First wire on a pin wins, matching the old `.find()` behaviour.
+        if (pins && src && pins[c.toInput ? 1 : 0] === null) pins[c.toInput ? 1 : 0] = src;
+      }
+      return { byId, sources };
+    }
 
     // What this node's output should be, given whatever its sources currently hold.
     // Unconnected pins read as 0.
-    function gateValue(node) {
-      const incoming = connections.filter(c => c.to === node.id);
-      const pinCount = ['NOT', 'BUF', 'OUTPUT'].includes(node.type) ? 1 : 2;
-      const a = [];
-      for (let i = 0; i < pinCount; i++) {
-        const conn = incoming.find(c => c.toInput === i);
-        const src = conn ? nodes.find(n => n.id === conn.from) : null;
-        a.push(src ? src.val : false);
-      }
+    function gateValue(node, idx) {
+      const pins = (idx || buildIndex()).sources.get(node.id);
+      const a0 = pins && pins[0] ? pins[0].val : false;
+      const a1 = pins && pins[1] ? pins[1].val : false;
       switch (node.type) {
-        case 'OUTPUT': return a[0];
-        case 'BUF':    return a[0];
-        case 'NOT':    return !a[0];
-        case 'AND':    return a[0] && a[1];
-        case 'OR':     return a[0] || a[1];
-        case 'XOR':    return a[0] !== a[1];
-        case 'NAND':   return !(a[0] && a[1]);
-        case 'NOR':    return !(a[0] || a[1]);
-        case 'XNOR':   return a[0] === a[1];
+        case 'OUTPUT': return a0;
+        case 'BUF':    return a0;
+        case 'NOT':    return !a0;
+        case 'AND':    return a0 && a1;
+        case 'OR':     return a0 || a1;
+        case 'XOR':    return a0 !== a1;
+        case 'NAND':   return !(a0 && a1);
+        case 'NOR':    return !(a0 || a1);
+        case 'XNOR':   return a0 === a1;
         default:       return false;
       }
     }
@@ -1186,23 +1986,82 @@ Check your Browserslist config to be sure that your targets are set up correctly
     // the previous pass forward is exactly what lets a feedback loop hold state
     // rather than collapsing to 0 on every recompute. Nodes in `frozen` are pinned
     // (used to explore a specific prior state). Returns false if it never settled.
-    function settle(frozen, scope) {
+    // Nodes ordered so every gate comes after the gates that feed it. Back edges
+    // are dropped, which is the only sane thing to do with a loop -- a loop still
+    // needs several passes, it just stops dragging the acyclic parts down with it.
+    // Iterative DFS, seeded and branched in id order, so the result is a function
+    // of the graph alone and never of the arrays' incidental order.
+    function topoOrder() {
+      const adj = new Map();
+      for (const n of nodes) adj.set(n.id, []);
+      for (const c of connections) {
+        const a = adj.get(c.from);
+        if (a && adj.has(c.to)) a.push(c.to);
+      }
+      for (const a of adj.values()) if (a.length > 1) a.sort((x, y) => x - y);
+
+      const byId = buildIdMap();
+      const seen = new Set();
+      const out = [];
+      for (const root of nodes.slice().sort((a, b) => a.id - b.id)) {
+        if (seen.has(root.id)) continue;
+        seen.add(root.id);
+        const stack = [[root.id, 0]];
+        while (stack.length) {
+          const top = stack[stack.length - 1];
+          const kids = adj.get(top[0]) || [];
+          if (top[1] < kids.length) {
+            const k = kids[top[1]++];
+            if (!seen.has(k)) { seen.add(k); stack.push([k, 0]); }
+          } else {
+            stack.pop();
+            const n = byId.get(top[0]);
+            if (n) out.push(n);
+          }
+        }
+      }
+      return out.reverse();
+    }
+
+    // The nodes a sweep may touch: not inputs, inside the scope, not pinned.
+    // The order comes from topoOrder rather than `nodes`, and both halves of that
+    // matter. Clicking a gate moves it to the end of `nodes` for draw order, and a
+    // bistable circuit settles into whichever state its sweep order happens to
+    // favour -- so sweeping in array order meant the state an SR latch woke up in
+    // depended on which gate you last clicked. Dependency order also carries a
+    // signal the full length of a chain in one pass instead of one gate per pass,
+    // so a 200-deep chain no longer exhausts MAX_ITERATIONS and get reported as
+    // oscillating when it settles perfectly well.
+    function settleList(frozen, scope) {
+      const list = [];
+      for (const n of topoOrder()) {
+        if (n.type === 'INPUT') continue;
+        if (scope && !scope.has(n.id)) continue;
+        if (frozen && frozen.has(n.id)) continue;
+        list.push(n);
+      }
+      return list;
+    }
+
+    // `idx` and `list` are constant for a whole truth table, so renderCircuit works
+    // them out once and hands them in; on their own, both are recomputed per call.
+    function settle(frozen, scope, idx, list) {
+      idx = idx || buildIndex();
+      list = list || settleList(frozen, scope);
       let changed = true;
       let iterations = 0;
       while (changed && iterations < MAX_ITERATIONS) {
         changed = false;
         iterations++;
-        nodes.forEach(node => {
-          if (node.type === 'INPUT') return;
-          if (scope && !scope.has(node.id)) return;
-          if (frozen && frozen.has(node.id)) return;
-          const next = gateValue(node);
+        for (const node of list) {
+          const next = gateValue(node, idx);
           if (node.val !== next) {
             node.val = next;
             changed = true;
           }
-        });
+        }
       }
+      lastSettleWork = iterations * list.length;
       return !changed;
     }
 
@@ -1256,9 +2115,60 @@ Check your Browserslist config to be sure that your targets are set up correctly
     // One propagation pass, all gates updated from the SAME previous instant rather
     // than in array order. That simultaneity is what makes a ring actually ring: an
     // in-place pass would race around the loop and land back where it started.
+    // -------------------------------------------------- oscillation period
+    // Step gives every gate a one-tick delay, so the board's state is the value
+    // of EVERY gate -- not just the feedback nodes the truth table indexes by.
+    // A ring of three inverters visits six states; the table has room for two.
+    // So stepping an unsettled circuit passes through states no row describes,
+    // and the honest thing to report is not a row but the cycle itself.
+    let stepTick = 0;
+    let stepSeen = new Map();   // state vector -> the tick it was first seen on
+    let cyclePeriod = 0;        // ticks per cycle; 0 unknown, 1 means at rest
+
+    // Sorted by id, so the key describes the circuit rather than the order the
+    // array happens to be in -- clicking a gate reorders `nodes`.
+    function boardStateKey() {
+      const ordered = nodes.slice().sort((a, b) => a.id - b.id);
+      let key = '';
+      for (const n of ordered) key += n.val ? '1' : '0';
+      return key;
+    }
+
+    // A step landed on a state the board has been in before. Everything from
+    // here repeats, and the gap between the two sightings is the period.
+    function noteStepState() {
+      const key = boardStateKey();
+      const before = stepSeen.get(key);
+      stepTick++;
+      if (before !== undefined) {
+        cyclePeriod = stepTick - before;
+        // Re-stamp it. Measuring against the FIRST sighting would report two laps
+        // as a cycle twice as long, three laps as three times, and so on; against
+        // the most recent one it stays a rolling measurement of one lap.
+        stepSeen.set(key, stepTick);
+        return;
+      }
+      // A cycle longer than this is not something anyone is reading off a
+      // header, and the map should not grow without a ceiling.
+      if (stepSeen.size < 4096) stepSeen.set(key, stepTick);
+    }
+
+    // The board moved by something other than a step -- settling, a row jump --
+    // so the recorded phase is meaningless. The period is a property of the
+    // circuit rather than of the moment, so that one survives.
+    function forgetCyclePhase() { stepSeen = new Map(); stepTick = 0; }
+
+    // The circuit itself changed. Nothing learned about the old one still holds.
+    function resetCycleWatch() { forgetCyclePhase(); cyclePeriod = 0; }
+
     function stepSync() {
-      const next = nodes.map(n => (n.type === 'INPUT' ? n.val : gateValue(n)));
+      // Seed the run with where it started, so the first repeat is spotted on
+      // the tick it happens rather than one lap later.
+      if (!stepSeen.size) stepSeen.set(boardStateKey(), 0);
+      const idx = buildIndex();
+      const next = nodes.map(n => (n.type === 'INPUT' ? n.val : gateValue(n, idx)));
       nodes.forEach((n, i) => { n.val = next[i]; });
+      noteStepState();
     }
 
     let running = false;
@@ -1287,7 +2197,10 @@ Check your Browserslist config to be sure that your targets are set up correctly
       if (runTimer) { clearInterval(runTimer); runTimer = null; }
       const btn = document.getElementById('run-btn');
       if (btn) btn.textContent = 'Run';
+      // computeLogic relaxes the board, which for an oscillator lands it
+      // somewhere off the cycle. Keep the period, drop the phase.
       computeLogic();
+      forgetCyclePhase();
       updateTruthTable();
       draw();
     }
@@ -1329,7 +2242,7 @@ Check your Browserslist config to be sure that your targets are set up correctly
       else if (n.type === 'XOR' || n.type === 'XNOR') {
         ctx.moveTo(x - 5, y);
         ctx.quadraticCurveTo(x + w * 0.25 - 5, y + h / 2, x - 5, y + h);
-        ctx.strokeStyle = selectedNodes.includes(n) ? '#ef4444' : (n.val ? activeCol : borderCol);
+        ctx.strokeStyle = drawSelected.has(n) ? '#ef4444' : (n.val ? activeCol : borderCol);
         ctx.stroke();
         
         ctx.beginPath();
@@ -1374,17 +2287,29 @@ Check your Browserslist config to be sure that your targets are set up correctly
       return { x: xt, y: yt };
     }
 
-    function getDistanceToConn(pos, c) {
-      const fromNode = nodes.find(n => n.id === c.from);
-      const toNode = nodes.find(n => n.id === c.to);
+    // `byId` is optional; the caller passes one when testing many wires at once,
+    // otherwise every call would rescan the node list twice.
+    function getDistanceToConn(pos, c, byId, limit) {
+      const lookup = byId || buildIdMap();
+      const fromNode = lookup.get(c.from);
+      const toNode = lookup.get(c.to);
       if (!fromNode || !toNode) return Infinity;
       const start = getPorts(fromNode).output;
       const end = getPorts(toNode).inputs[c.toInput];
       if (!start || !end) return Infinity;
-      
+
       const cp1 = { x: start.x + 40, y: start.y };
       const cp2 = { x: end.x - 40, y: end.y };
-      
+
+      // The curve stays inside the box around its control points, so a click well
+      // outside that box cannot be near the wire -- reject it before sampling.
+      if (limit !== undefined) {
+        const bx0 = Math.min(start.x, cp2.x), bx1 = Math.max(cp1.x, end.x);
+        const by0 = Math.min(start.y, end.y), by1 = Math.max(start.y, end.y);
+        if (pos.x < bx0 - limit || pos.x > bx1 + limit
+         || pos.y < by0 - limit || pos.y > by1 + limit) return Infinity;
+      }
+
       let minDist = Infinity;
       for (let t = 0; t <= 1; t += 0.05) {
         const pt = getBezierPoint(t, start, cp1, cp2, end);
@@ -1404,10 +2329,77 @@ Check your Browserslist config to be sure that your targets are set up correctly
     const ZOOM_MIN = 0.2, ZOOM_MAX = 3;
     const WORLD_W = 4000, WORLD_H = 3000;   // also the ceiling the share code encodes
     let zoom = 1, panX = 0, panY = 0;
+    let backingDpr = 1;   // the devicePixelRatio the canvas backing store was sized for
+
+    // getComputedStyle forces the browser to resolve style, and draw() ran it every
+    // frame -- including every mousemove of a pan. The palette only changes when the
+    // theme does, so resolve it once and let applyTheme invalidate it.
+    let themeColors = null;
+    function invalidateTheme() { themeColors = null; }
+
+    function getThemeColors() {
+      if (themeColors) return themeColors;
+      const st = getComputedStyle(document.body);
+      const pick = (name, fallback) => st.getPropertyValue(name).trim() || fallback;
+      themeColors = {
+        border:   pick('--wire',      '#4d5771'),
+        text:     pick('--gate-ink',  '#1b2233'),
+        active:   pick('--live',      '#059669'),
+        gateFill: pick('--gate-fill', '#eaeef5'),
+        liveFill: pick('--live-fill', '#c7f2df'),
+        liveInk:  pick('--live-ink',  '#04372a'),
+        mono:     pick('--font-mono', 'ui-monospace, SFMono-Regular, Menlo, monospace'),
+      };
+      return themeColors;
+    }
+
+    // A trackpad or high-rate mouse fires mousemove far more often than the screen
+    // refreshes -- up to a few hundred times a second -- and the old code painted
+    // synchronously on every one of them. Coalesce into the next animation frame so
+    // a burst of moves costs one paint, not thirty.
+    let drawPending = false;
+    function requestDraw() {
+      if (drawPending) return;
+      drawPending = true;
+      const run = () => { drawPending = false; draw(); };
+      if (window.requestAnimationFrame) window.requestAnimationFrame(run);
+      else setTimeout(run, 16);
+    }
+
+    // True while a drag, pan, wiring or box-select is in flight. Glow is the most
+    // expensive thing the canvas does -- a blur pass per lit gate and per lit wire --
+    // and nobody is studying the halo while the board is moving under the cursor.
+    let interacting = false;
+
+    function beginInteraction() { interacting = true; }
+    function endInteraction() {
+      if (!interacting) return;
+      interacting = false;
+      draw();          // repaint once, with the glow back
+    }
 
     function applyTransform() {
       const dpr = window.devicePixelRatio || 1;
       ctx.setTransform(dpr * zoom, 0, 0, dpr * zoom, dpr * panX, dpr * panY);
+      syncGrid();
+    }
+
+    // The drafting grid under the board is CSS, not canvas, so it has to be told
+    // about the view by hand -- otherwise the gates slide over a grid that stays
+    // put, which reads as a bug rather than as paper. applyTransform is the one
+    // funnel every zoom, pan and repaint goes through. Writing the two properties
+    // unconditionally would force a style recalculation on every frame of a pan,
+    // so only touch them when the numbers actually move.
+    let gridKey = '';
+    function syncGrid() {
+      const frame = document.getElementById('board-frame');
+      if (!frame || !frame.style) return;
+      const step = 24 * zoom;
+      const key = step.toFixed(2) + ':' + panX.toFixed(1) + ':' + panY.toFixed(1);
+      if (key === gridKey) return;
+      gridKey = key;
+      frame.style.backgroundSize = step + 'px ' + step + 'px, ' + step + 'px ' + step + 'px';
+      frame.style.backgroundPosition = panX + 'px ' + panY + 'px, ' + panX + 'px ' + panY + 'px';
     }
 
     function syncZoomLabel() {
@@ -1425,12 +2417,12 @@ Check your Browserslist config to be sure that your targets are set up correctly
       panX = sx - wx * zoom;
       panY = sy - wy * zoom;
       syncZoomLabel();
-      draw();
+      requestDraw();
     }
 
     function zoomBy(factor) { zoomAt(factor, viewW / 2, viewH / 2); }
 
-    function panBy(dx, dy) { panX -= dx; panY -= dy; draw(); }
+    function panBy(dx, dy) { panX -= dx; panY -= dy; requestDraw(); }
 
     function resetView() { zoom = 1; panX = 0; panY = 0; panDrag = null; syncZoomLabel(); }
 
@@ -1457,10 +2449,14 @@ Check your Browserslist config to be sure that your targets are set up correctly
     canvas.addEventListener('wheel', e => {
       e.preventDefault();
       const rect = canvas.getBoundingClientRect();
+      // Firefox reports wheel notches in lines (deltaMode 1), Chrome in pixels --
+      // the same physical scroll otherwise pans ~30x slower in one of them.
+      const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? viewH : 1;
+      const dx = e.deltaX * unit, dy = e.deltaY * unit;
       if (e.ctrlKey || e.metaKey) {
-        zoomAt(Math.pow(0.99, e.deltaY), e.clientX - rect.left, e.clientY - rect.top);
+        zoomAt(Math.pow(0.99, dy), e.clientX - rect.left, e.clientY - rect.top);
       } else {
-        panBy(e.deltaX, e.deltaY);
+        panBy(dx, dy);
       }
     }, { passive: false });
 
@@ -1485,7 +2481,27 @@ Check your Browserslist config to be sure that your targets are set up correctly
     canvas.addEventListener('mousedown', startInteract);
     canvas.addEventListener('touchstart', startInteract);
     
+    // Two fingers on the glass: zoom about the midpoint and pan with it. The wheel
+    // handler covers a trackpad pinch (which arrives as ctrl+wheel), but a real
+    // touchscreen sends neither that nor anything else the rest of this file reads.
+    const touchGap = t => Math.sqrt(
+      Math.pow(t[0].clientX - t[1].clientX, 2) + Math.pow(t[0].clientY - t[1].clientY, 2));
+    const touchMid = (t, rect) => ({
+      x: (t[0].clientX + t[1].clientX) / 2 - rect.left,
+      y: (t[0].clientY + t[1].clientY) / 2 - rect.top
+    });
+
     function startInteract(e) {
+      if (e.touches && e.touches.length === 2) {
+        const rect = canvas.getBoundingClientRect();
+        pinch = { gap: touchGap(e.touches), mid: touchMid(e.touches, rect) };
+        // Abandon anything the first finger had started.
+        dragNode = null; dragBefore = null; connectionWire = null;
+        selectionBox = null; panDrag = null;
+        if (e.preventDefault) e.preventDefault();
+        return;
+      }
+
       const pos = getMousePos(e);
 
       // Grab the board: the hand tool, Option/Alt with any tool, or a middle click.
@@ -1493,6 +2509,7 @@ Check your Browserslist config to be sure that your targets are set up correctly
       if (activeTool === 'pan' || e.altKey || e.button === 1) {
         const sp = getScreenPos(e);
         panDrag = { x: sp.x - panX, y: sp.y - panY };
+        beginInteraction();
         setCanvasCursor('grabbing');
         if (e.preventDefault) e.preventDefault();   // middle-click autoscroll on Windows
         return;
@@ -1515,6 +2532,7 @@ Check your Browserslist config to be sure that your targets are set up correctly
           const dy = pos.y - ports.output.y;
           if (dx*dx + dy*dy < 80) {
             connectionWire = { from: n.id, startX: ports.output.x, startY: ports.output.y, curX: pos.x, curY: pos.y };
+            beginInteraction();
             return;
           }
         }
@@ -1532,6 +2550,7 @@ Check your Browserslist config to be sure that your targets are set up correctly
               backwards: true, to: n.id, toInput: idx,
               startX: port.x, startY: port.y, curX: pos.x, curY: pos.y
             };
+            beginInteraction();
             return;
           }
         }
@@ -1542,6 +2561,7 @@ Check your Browserslist config to be sure that your targets are set up correctly
         const n = nodes[i];
         if (pos.x >= n.x && pos.x <= n.x + n.w && pos.y >= n.y && pos.y <= n.y + n.h) {
           dragNode = n;
+          beginInteraction();
           dragBefore = snapshot();
           dragOffset.x = pos.x - n.x;
           dragOffset.y = pos.y - n.y;
@@ -1554,14 +2574,16 @@ Check your Browserslist config to be sure that your targets are set up correctly
       }
 
       // Connection selection
+      const hitIdx = buildIdMap();
       for (let c of connections) {
-        if (getDistanceToConn(pos, c) < 8) {
+        if (getDistanceToConn(pos, c, hitIdx, 8) < 8) {
           selectConnection(c);
           return;
         }
       }
 
       selectionBox = { x1: pos.x, y1: pos.y, x2: pos.x, y2: pos.y };
+      beginInteraction();
       clearSelection();
     }
 
@@ -1569,11 +2591,24 @@ Check your Browserslist config to be sure that your targets are set up correctly
     canvas.addEventListener('touchmove', moveInteract);
 
     function moveInteract(e) {
+      if (pinch && e.touches && e.touches.length === 2) {
+        const rect = canvas.getBoundingClientRect();
+        const gap = touchGap(e.touches), mid = touchMid(e.touches, rect);
+        if (pinch.gap > 0) zoomAt(gap / pinch.gap, mid.x, mid.y);
+        // Moving both fingers together drags the board as well as scaling it.
+        panX += mid.x - pinch.mid.x;
+        panY += mid.y - pinch.mid.y;
+        pinch.gap = gap;
+        pinch.mid = mid;
+        requestDraw();
+        if (e.preventDefault) e.preventDefault();
+        return;
+      }
       if (panDrag) {
         const sp = getScreenPos(e);
         panX = sp.x - panDrag.x;
         panY = sp.y - panDrag.y;
-        draw();
+        requestDraw();
         return;
       }
       const pos = getMousePos(e);
@@ -1584,15 +2619,15 @@ Check your Browserslist config to be sure that your targets are set up correctly
           n.x = Math.max(0, Math.min(WORLD_W - n.w, n.x + dx));
           n.y = Math.max(0, Math.min(WORLD_H - n.h, n.y + dy));
         });
-        draw();
+        requestDraw();
       } else if (connectionWire) {
         connectionWire.curX = pos.x;
         connectionWire.curY = pos.y;
-        draw();
+        requestDraw();
       } else if (selectionBox) {
         selectionBox.x2 = pos.x;
         selectionBox.y2 = pos.y;
-        draw();
+        requestDraw();
       }
     }
 
@@ -1600,9 +2635,12 @@ Check your Browserslist config to be sure that your targets are set up correctly
     window.addEventListener('touchend', endInteract);
 
     function endInteract(e) {
+      if (pinch) { pinch = null; endInteraction(); return; }
+
       if (panDrag) {
         panDrag = null;
         setCanvasCursor(activeTool === 'pan' ? 'grab' : '');
+        endInteraction();
         return;   // a pan is not a click: nothing to select, nothing to wire
       }
 
@@ -1676,6 +2714,7 @@ Check your Browserslist config to be sure that your targets are set up correctly
         dragBefore = null;
       }
       dragNode = null;
+      endInteraction();
     }
 
     canvas.addEventListener('dblclick', e => {
@@ -1693,6 +2732,11 @@ Check your Browserslist config to be sure that your targets are set up correctly
     });
 
     function draw() {
+      // Belt and braces for the density change above: if the backing store no
+      // longer matches, resize -- which redraws -- rather than paint at the wrong
+      // scale. resize() updates backingDpr first, so this cannot loop.
+      if ((window.devicePixelRatio || 1) !== backingDpr) { resize(); return; }
+
       // Clear in device space -- a zoomed or panned transform would otherwise
       // leave whatever falls outside the transformed rectangle on screen.
       ctx.save();
@@ -1700,23 +2744,49 @@ Check your Browserslist config to be sure that your targets are set up correctly
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.restore();
       applyTransform();
-      const bodyStyle = getComputedStyle(document.body);
-      const borderCol = bodyStyle.getPropertyValue('--wire').trim() || '#4d5771';
-      const textCol = bodyStyle.getPropertyValue('--gate-ink').trim() || '#1b2233';
-      const activeCol = bodyStyle.getPropertyValue('--live').trim() || '#059669';
-      const gateFill = bodyStyle.getPropertyValue('--gate-fill').trim() || '#eaeef5';
-      const liveFill = bodyStyle.getPropertyValue('--live-fill').trim() || '#c7f2df';
-      const liveInk = bodyStyle.getPropertyValue('--live-ink').trim() || '#04372a';
+      const col = getThemeColors();
+      const borderCol = col.border, textCol = col.text, activeCol = col.active;
+      const gateFill = col.gateFill, liveFill = col.liveFill, liveInk = col.liveInk;
+
+      // Everything outside the window costs exactly as much to draw as everything
+      // inside it, and on a big board most of it is outside. Cull against the
+      // visible rectangle in world coordinates, with a margin for glow and heads.
+      const CULL = 60;
+      const vx0 = -panX / zoom - CULL, vy0 = -panY / zoom - CULL;
+      const vx1 = (viewW - panX) / zoom + CULL, vy1 = (viewH - panY) / zoom + CULL;
+
+      // getPorts allocates, and every wire asks for the ports of both its ends --
+      // so most nodes get asked several times per frame. Resolve each one once.
+      // Zoomed out far enough and the 13px label renders at six pixels and the port
+      // dots at two -- illegible either way, but still costing a text layout and two
+      // arcs per gate. Below this zoom, draw the shapes and skip the trimmings.
+      const detail = zoom >= 0.45;
+      const glow = detail && !interacting;
+
+      const portCache = new Map();
+      const portsOf = n => {
+        let ports = portCache.get(n.id);
+        if (!ports) { ports = getPorts(n); portCache.set(n.id, ports); }
+        return ports;
+      };
+      // Set membership instead of a linear scan of the selection for every node.
+      drawSelected = new Set(selectedNodes);
 
       // Draw Connections (Curved splines from previous design)
+      const byId = buildIdMap();
       connections.forEach(c => {
-        const fromNode = nodes.find(n => n.id === c.from);
-        const toNode = nodes.find(n => n.id === c.to);
+        const fromNode = byId.get(c.from);
+        const toNode = byId.get(c.to);
         if (!fromNode || !toNode) return;
 
-        const start = getPorts(fromNode).output;
-        const end = getPorts(toNode).inputs[c.toInput];
+        const start = portsOf(fromNode).output;
+        const end = portsOf(toNode).inputs[c.toInput];
         if (!start || !end) return;
+
+        // A bezier never leaves the box around its four control points, so this
+        // is an exact test, not an approximation.
+        if (Math.max(start.x + 40, end.x) < vx0 || Math.min(start.x, end.x - 40) > vx1
+         || Math.max(start.y, end.y) < vy0 || Math.min(start.y, end.y) > vy1) return;
 
         ctx.beginPath();
         ctx.moveTo(start.x, start.y);
@@ -1728,7 +2798,7 @@ Check your Browserslist config to be sure that your targets are set up correctly
         } else {
           ctx.strokeStyle = fromNode.val ? activeCol : borderCol;
           ctx.lineWidth = fromNode.val ? 3 : 2.5;
-          if (fromNode.val) { ctx.shadowColor = activeCol; ctx.shadowBlur = GLOW * 0.75; }
+          if (fromNode.val && glow) { ctx.shadowColor = activeCol; ctx.shadowBlur = GLOW * 0.75; }
         }
         ctx.stroke();
         ctx.shadowBlur = 0;
@@ -1776,8 +2846,16 @@ Check your Browserslist config to be sure that your targets are set up correctly
         ctx.setLineDash([]);
       }
 
-      // Draw ANSI Gate Units
+      // Draw ANSI Gate Units. The font never changes between gates, and assigning
+      // ctx.font re-parses the shorthand every time, so set it once for the batch.
+      // Read the family off the tokens so the schematic and the chrome speak in
+      // the same voice. Falls back to the old stack if the webfont never loads.
+      ctx.font = 'bold 13px ' + (getThemeColors().mono || 'ui-monospace, SFMono-Regular, Menlo, monospace');
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
       nodes.forEach(n => {
+        if (n.x > vx1 || n.x + n.w + 8 < vx0 || n.y > vy1 || n.y + n.h < vy0) return;
+
         // A lit gate is signalled three ways at once -- tinted body, heavier green
         // outline, and a glow -- because on a white canvas no single one of them
         // reads strongly enough on its own.
@@ -1785,22 +2863,21 @@ Check your Browserslist config to be sure that your targets are set up correctly
         const body = lit ? liveFill : gateFill;
         ctx.fillStyle = body;
         
-        if (selectedNodes.includes(n)) {
+        if (drawSelected.has(n)) {
           ctx.strokeStyle = '#ef4444'; 
           ctx.lineWidth = 3;
         } else {
           ctx.strokeStyle = lit ? activeCol : borderCol;
           ctx.lineWidth = lit ? 3 : 2.25;
-          if (lit) { ctx.shadowColor = activeCol; ctx.shadowBlur = GLOW; }
+          if (lit && glow) { ctx.shadowColor = activeCol; ctx.shadowBlur = GLOW; }
         }
         
         drawGateSymbol(n, activeCol, borderCol, body);
         ctx.shadowBlur = 0;   // never let the glow bleed onto the label below
 
+        if (!detail) return;   // labels and ports are sub-pixel noise down here
+
         ctx.fillStyle = lit ? liveInk : textCol;
-        ctx.font = 'bold 13px ui-monospace, SFMono-Regular, Menlo, monospace';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
         // NOT and BUF are triangles: nearly all of the room is at the base, so
         // centring on the bounding box drives the letter into the tip where the
         // shape has pinched shut. A triangle's centroid is a third of the way
@@ -1809,7 +2886,7 @@ Check your Browserslist config to be sure that your targets are set up correctly
         const tipX = n.type === 'BUF' ? n.w : n.w - 10;
         ctx.fillText(n.name, n.x + (tri ? tipX / 3 : n.w / 2), n.y + n.h / 2);
 
-        const ports = getPorts(n);
+        const ports = portsOf(n);
         ctx.fillStyle = borderCol;
         ports.inputs.forEach(p => {
           ctx.beginPath();
@@ -1825,7 +2902,7 @@ Check your Browserslist config to be sure that your targets are set up correctly
       });
     }
 
-    const CELL = 'px-2 py-1.5 border-r border-[var(--border)] last:border-r-0';
+    const CELL = 'px-2 py-1.5';
 
     // Measured on this machine: a sweep costs about 1us per (row x node), and the
     // whole thing reruns on every input toggle, so cap the work near 250ms.
@@ -1835,8 +2912,15 @@ Check your Browserslist config to be sure that your targets are set up correctly
     // EN=0 is perfectly stable while the EN=1 row still oscillates, and that row
     // is the one wearing tildes that need explaining.
     let tableUnsettled = false;
+    // Gate evaluations one table may spend. rowCount x gateCount only bounds the
+    // ideal case; this bounds the real one, including oscillating rows that cost
+    // up to 200 passes each. Calibrated to roughly a quarter-second.
+    const TABLE_OP_BUDGET = 600000;
     let tableCircuits = [];
-    const TABLE_WORK_BUDGET = 250000;
+    // Raised from 250,000 once gateValue stopped rescanning the wire list: the same
+    // wall-clock ceiling now buys about three times the table. Re-measure before
+    // touching this -- it is calibrated to ~250ms per refresh on a mid laptop.
+    const TABLE_WORK_BUDGET = 750000;
 
     // Node names end up inside an innerHTML string, and a name can come from a
     // share link, a pasted code or a restored autosave -- none of which this page
@@ -1845,7 +2929,7 @@ Check your Browserslist config to be sure that your targets are set up correctly
     const esc = str => String(str == null ? '' : str).replace(/[&<>"']/g, ch => HTML_ESCAPES[ch]);
 
     function bitCell(on, extra) {
-      const tone = on ? 'text-[var(--primary)] font-bold' : 'text-[var(--muted-foreground)]';
+      const tone = on ? 'ls-cell--on' : 'ls-cell--off';
       return `<td class="${CELL} ${extra || ''} ${tone}">${on ? '1' : '0'}</td>`;
     }
 
@@ -1853,7 +2937,7 @@ Check your Browserslist config to be sure that your targets are set up correctly
     // the relaxation was holding when it gave up is an artefact of where it
     // started, not an answer, and printing it makes the table flicker.
     function unsettledCell(extra) {
-      return `<td class="${CELL} ${extra || ''} text-[#f59e0b] font-bold" `
+      return `<td class="${CELL} ${extra || ''} ls-cell--unsettled" `
         + `title="This input combination never settles">&sim;</td>`;
     }
 
@@ -1894,9 +2978,12 @@ Check your Browserslist config to be sure that your targets are set up correctly
 
     // One table for one independent circuit. Returns null when the group has no
     // input or no output, i.e. there is nothing to tabulate yet.
-    function renderCircuit(scope, loops, showGates, showState) {
+    function renderCircuit(scope, loops, showGates, showState, members) {
       const byId = (a, b) => a.id - b.id;
-      const members = nodes.filter(n => scope.has(n.id));
+      // Caller passes the membership list; falling back to a filter here would be
+      // an O(all nodes) scan for every circuit on the board, i.e. quadratic on a
+      // board of many small disconnected pieces.
+      members = members || nodes.filter(n => scope.has(n.id));
       const inputs = members.filter(n => n.type === 'INPUT').sort(byId);
       const outputs = members.filter(n => n.type === 'OUTPUT').sort(byId);
       if (!inputs.length || !outputs.length) return null;
@@ -1913,8 +3000,8 @@ Check your Browserslist config to be sure that your targets are set up correctly
       const rowCount = Math.pow(2, bits);
       const signature = `${inputs.map(n => esc(n.name)).join(', ')} \u2192 ${outputs.map(n => esc(n.name)).join(', ')}`;
 
-      const shell = inner => `<div class="border border-[var(--border)] rounded bg-[var(--background)] overflow-hidden shrink-0">`
-        + `<div class="px-2 py-1 text-[10px] font-mono text-[var(--muted-foreground)] bg-[var(--card)] border-b border-[var(--border)]">${signature}</div>`
+      const shell = inner => `<div class="ls-table-card overflow-hidden shrink-0">`
+        + `<div class="ls-table-sig px-2 py-1">${signature}</div>`
         + inner + `</div>`;
 
       const work = rowCount * members.length;
@@ -1933,25 +3020,37 @@ Check your Browserslist config to be sure that your targets are set up correctly
         const byState = sBits
           ? ` Unticking &ldquo;Show (t)&rdquo; removes ${sBits} of them at once.` : '';
 
-        return shell(`<div class="px-3 py-4 text-[10px] leading-relaxed text-[var(--muted-foreground)] text-center">`
+        return shell(`<div class="ls-note ls-note--muted px-3 py-4 leading-relaxed text-center">`
           + `${inputs.length} input${inputs.length === 1 ? '' : 's'}`
           + `${sBits ? ` and ${sBits} state bit${sBits === 1 ? '' : 's'}` : ''} means ${over}.<br>`
           + `Each one doubles the table, so removing <b>${drop}</b> would bring it back.${byState}</div>`);
       }
 
       let headHtml = '';
-      inputs.forEach(i => headHtml += headCell(i.name, 'text-[var(--muted-foreground)]'));
-      stateNodes.forEach(n => headHtml += headCell(`${n.name}(t)`, 'text-[var(--foreground)]'));
-      gates.forEach(g => headHtml += headCell(g.name, 'text-[var(--foreground)]'));
-      outputs.forEach(o => headHtml += headCell(o.name, 'text-[var(--primary)]'));
+      inputs.forEach(i => headHtml += headCell(i.name, 'ls-table__head--in'));
+      stateNodes.forEach(n => headHtml += headCell(`${n.name}(t)`, 'ls-table__head--gate'));
+      gates.forEach(g => headHtml += headCell(g.name, 'ls-table__head--gate'));
+      outputs.forEach(o => headHtml += headCell(o.name, 'ls-table__head--out'));
       stateNodes.forEach((n, idx) => headHtml += headCell(
-        `${n.name}(t+1)`, 'text-[var(--primary)]',
-        idx === 0 ? 'border-l border-[var(--border)]' : ''));
+        `${n.name}(t+1)`, 'ls-table__head--out',
+        idx === 0 ? 'ls-edge' : ''));
 
-      // The sweep walks this circuit through every combination, so snapshot every
-      // node's value first -- inputs, held state, and the other circuits on the
-      // board -- and put it all back afterwards.
-      const snapshot = nodes.map(n => n.val);
+      // The sweep walks this circuit through every combination, so snapshot the
+      // values first and put them back afterwards. Only this circuit's own members
+      // need saving: a scoped settle never touches anything outside the scope.
+      const idx = buildIndex();
+      const sweep = settleList(frozen, scope);
+      const snapshot = members.map(n => n.val);
+
+      // Does this circuit come to rest from where it is now, with nothing pinned?
+      // That is what separates a board on its way to a row -- it will arrive --
+      // from one going round a cycle the table has no rows for. Note this is a
+      // different question from whether a given ROW settles: pin a ring's
+      // feedback node and the rest of it is pure combinational logic that settles
+      // immediately, which is why the per-row flag cannot answer this one.
+      // Finding out moves the board, so put it back straight afterwards.
+      const restless = !settle(null, scope, idx, settleList(null, scope));
+      members.forEach((n, i) => { n.val = snapshot[i]; });
 
       // Which row the board is actually sitting on. With feedback there are several
       // rows per input combination -- one per prior state -- and only this one
@@ -1968,25 +3067,55 @@ Check your Browserslist config to be sure that your targets are set up correctly
       });
 
       let bodyHtml = '';
+      let spent = 0;
+      let ranOut = 0;          // rows left undone when the budget ran out
       for (let r = 0; r < rowCount; r++) {
+        if (spent > TABLE_OP_BUDGET) { ranOut = rowCount - r; break; }
         // Nothing is pinned when the state columns are hidden, so rewind to the
         // board's present state first -- otherwise each row would inherit whatever
         // the row above it left behind, which is history, not logic.
-        if (!showState) nodes.forEach((n, i) => { n.val = snapshot[i]; });
+        if (!showState) members.forEach((n, i) => { n.val = snapshot[i]; });
 
         inputs.forEach((n, i) => { n.val = !!((r >> (sBits + inputs.length - 1 - i)) & 1); });
         stateNodes.forEach((n, i) => { n.val = !!((r >> (sBits - 1 - i)) & 1); });
 
-        const settled = settle(frozen, scope);
+        const settled = settle(frozen, scope, idx, sweep);
+        spent += lastSettleWork;
         if (!settled) tableUnsettled = true;
-        const next = stateNodes.map(n => gateValue(n));
+        const next = stateNodes.map(n => gateValue(n, idx));
 
-        const here = r === liveRow;
+        // The live row is picked from the inputs and state bits, which say where
+        // the board is headed, not where it is. Under the clock a signal takes a
+        // tick per gate to get there, so the row's settled values can be several
+        // ticks ahead of the board -- calling that "you are here" would
+        // contradict the canvas.
+        //
+        // Off the row, two different things are going on and they need different
+        // words. If the row settles, the board really is on its way to it and
+        // will arrive. If the row never settles, there is nothing to arrive at:
+        // the circuit is going round a cycle whose states the table has no rows
+        // for, because the table gives state only to the feedback nodes while
+        // Step gives it to every gate.
+        let here = r === liveRow;
+        let adrift = false;
+        if (here) {
+          for (let m = 0; m < members.length; m++) {
+            if (members[m].val !== snapshot[m]) { here = false; adrift = true; break; }
+          }
+        }
+        const midCycle = adrift && restless;
+        const transit = adrift && !restless;
+        const mark = here ? 'ls-row--live'
+          : transit ? 'ls-row--transit'
+          : midCycle ? 'ls-row--midcycle' : '';
+        const why = transit
+          ? 'The board is still propagating towards this row -- click to jump straight to it'
+          : midCycle
+            ? 'This circuit oscillates, so Step passes through states no row describes -- click to jump to this one'
+            : 'Click to put the board in this state';
         let row = `<tr data-live="${here ? '1' : '0'}" data-jump="${circuitIdx}:${r}"`
-          + ` title="Click to put the board in this state"`
-          + ` class="border-b border-[var(--border)] cursor-pointer ${here
-          ? 'bg-[var(--row-live)] shadow-[inset_3px_0_0_0_var(--row-live-edge)]'
-          : 'hover:bg-[var(--card)]'}">`;
+          + ` title="${why}"`
+          + ` class="cursor-pointer ${mark}">`;
         // Inputs and pinned state are given, so they are real either way. Everything
         // derived from them is only meaningful if the circuit came to rest.
         inputs.forEach(i => row += bitCell(i.val));
@@ -1994,21 +3123,27 @@ Check your Browserslist config to be sure that your targets are set up correctly
         gates.forEach(g => row += settled ? bitCell(g.val) : unsettledCell());
         outputs.forEach(o => row += settled ? bitCell(o.val) : unsettledCell());
         next.forEach((v, idx) => {
-          const edge = idx === 0 ? 'border-l border-[var(--border)]' : '';
+          const edge = idx === 0 ? 'ls-edge' : '';
           row += settled ? bitCell(v, edge) : unsettledCell(edge);
         });
         bodyHtml += row + '</tr>';
       }
 
-      nodes.forEach((n, i) => { n.val = snapshot[i]; });
+      members.forEach((n, i) => { n.val = snapshot[i]; });
+
+      const cutoff = ranOut
+        ? `<div class="ls-note ls-note--warn px-2 py-1 border-t border-[var(--border-rule)]">`
+          + `Stopped ${ranOut.toLocaleString()} rows short. This circuit oscillates on most `
+          + `inputs, and a row that never settles costs up to ${MAX_ITERATIONS} passes to work out.</div>`
+        : '';
 
       // No footnote here: the canvas header already carries the oscillation warning,
       // which is where it lived before and where it belongs. The tilde cells are
       // the in-table half of the same message.
       return shell(`<div class="overflow-auto max-h-[55vh]">`
-        + `<table class="min-w-full text-center text-xs font-mono">`
-        + `<thead class="bg-[var(--card)] border-b border-[var(--border)] sticky top-0"><tr>${headHtml}</tr></thead>`
-        + `<tbody>${bodyHtml}</tbody></table></div>`);
+        + `<table class="ls-table min-w-full text-center">`
+        + `<thead class="sticky top-0"><tr>${headHtml}</tr></thead>`
+        + `<tbody>${bodyHtml}</tbody></table></div>` + cutoff);
     }
 
 
@@ -2033,6 +3168,11 @@ Check your Browserslist config to be sure that your targets are set up correctly
       inputs.forEach((n, i) => { n.val = !!((r >> (sBits + inputs.length - 1 - i)) & 1); });
       states.forEach((n, i) => { n.val = !!((r >> (sBits - 1 - i)) & 1); });
       settle(new Set(circuit.stateIds), circuit.scope);
+      // No forgetCyclePhase here: pushHistory above already reset the watch
+      // outright, which is the right call. A jump can drop the board onto a
+      // different attractor, and a circuit with two cycles has two periods --
+      // so the old number is not merely stale, it may be about a cycle the
+      // board is no longer on. One lap of stepping earns it back.
 
       updateTruthTable();
       draw();
@@ -2101,12 +3241,23 @@ Check your Browserslist config to be sure that your targets are set up correctly
       const blocks = [];
       let halfBuilt = 0;
 
-      findCircuits().forEach(scope => {
-        const html = renderCircuit(scope, loops, showGates, showState);
+      // Work out which circuit each node belongs to in a single pass over the
+      // board, rather than rescanning every node once per circuit.
+      const groups = findCircuits();
+      const groupOf = new Map();
+      groups.forEach((scope, i) => { scope.forEach(id => groupOf.set(id, i)); });
+      const membersOf = groups.map(() => []);
+      for (const n of nodes) {
+        const g = groupOf.get(n.id);
+        if (g !== undefined) membersOf[g].push(n);
+      }
+
+      groups.forEach((scope, i) => {
+        const members = membersOf[i];
+        const html = renderCircuit(scope, loops, showGates, showState, members);
         if (html) { blocks.push(html); return; }
         // Worth mentioning only when one side is wired and the other is missing;
         // a loose cluster of gates with no pins at all is just work in progress.
-        const members = nodes.filter(n => scope.has(n.id));
         const hasIn = members.some(n => n.type === 'INPUT');
         const hasOut = members.some(n => n.type === 'OUTPUT');
         if (hasIn !== hasOut) halfBuilt++;
@@ -2115,16 +3266,26 @@ Check your Browserslist config to be sure that your targets are set up correctly
       // The warning lives in the canvas header, next to the board it describes --
       // raised either by the live board oscillating or by any row that cannot rest.
       const warn = document.getElementById('stability-indicator');
-      if (warn) warn.classList.toggle('hidden', !(unstable || tableUnsettled));
+      if (warn) {
+        const osc = unstable || tableUnsettled;
+        warn.classList.toggle('hidden', !osc);
+        // A period of 1 is a fixed point, which is the opposite of news.
+        if (osc) {
+          warn.innerHTML = 'Oscillating'
+            + (cyclePeriod > 1 ? ` &middot; ${cyclePeriod}-tick cycle` : '')
+            + ' &mdash; <b>&sim;</b> marks rows that never settle.'
+            + ' Tick &ldquo;Show (t)&rdquo; to read them.';
+        }
+      }
 
       if (!blocks.length) {
-        container.innerHTML = `<div class="px-2 py-8 text-[var(--muted-foreground)] text-center text-xs">Place inputs and outputs to evaluate logic.</div>`;
+        container.innerHTML = `<div class="ls-note ls-note--muted px-2 py-8 text-center">Place inputs and outputs to evaluate logic.</div>`;
         return;
       }
 
       let html = blocks.join('');
       if (halfBuilt) {
-        html += `<div class="px-1 text-[10px] font-mono text-[var(--muted-foreground)] shrink-0">`
+        html += `<div class="ls-note ls-note--muted px-1 shrink-0">`
           + `${halfBuilt} more group${halfBuilt === 1 ? '' : 's'} still needs an input and an output</div>`;
       }
       container.innerHTML = html;
@@ -2181,9 +3342,12 @@ Check your Browserslist config to be sure that your targets are set up correctly
       };
 
       bar.addEventListener('mousedown', begin);
-      bar.addEventListener('touchstart', begin);
+      // Chromium makes touchstart/touchmove passive by default on window, document
+      // and body -- and a passive listener's preventDefault() is ignored, so the
+      // splitter drag would fight the browser's own touch handling on a tablet.
+      bar.addEventListener('touchstart', begin, { passive: false });
       window.addEventListener('mousemove', drag);
-      window.addEventListener('touchmove', drag);
+      window.addEventListener('touchmove', drag, { passive: false });
       window.addEventListener('mouseup', finish);
       window.addEventListener('touchend', finish);
       bar.addEventListener('dblclick', () => setSidebarWidth(SIDEBAR_DEFAULT, true));
